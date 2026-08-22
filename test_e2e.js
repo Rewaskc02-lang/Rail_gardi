@@ -28,7 +28,7 @@ async function runTests() {
   const invalidLoginRes = await fetch(`${SERVER_URL}/api/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ pnr: "9999999999" })
+    body: JSON.stringify({ pnr: "0000000000" })
   });
   const validLoginRes = await fetch(`${SERVER_URL}/api/login`, {
     method: "POST",

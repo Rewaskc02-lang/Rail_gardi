@@ -103,7 +103,9 @@ const pnrDatabase = {
   "9999999999": { passengerName: "Anita Das", gender: "F", age: 42, quota: "GN", coach: "B1", seat: "C1", berth: "Lower", persona: "Standard" },
   "1010101010": { passengerName: "Vivek Rao", gender: "M", age: 29, quota: "GN", coach: "B1", seat: "C2", berth: "Middle", persona: "Standard" },
   "1212121212": { passengerName: "Meera Joshi", gender: "F", age: 36, quota: "GN", coach: "B1", seat: "C3", berth: "Upper", persona: "Standard" },
-  "1313131313": { passengerName: "Sanjay Nair", gender: "M", age: 47, quota: "GN", coach: "B1", seat: "C4", berth: "Side Lower", persona: "Standard" }
+  "1313131313": { passengerName: "Sanjay Nair", gender: "M", age: 47, quota: "GN", coach: "B1", seat: "C4", berth: "Side Lower", persona: "Standard" },
+  "1234567890": { passengerName: "Rahul Sharma", gender: "M", age: 30, quota: "GN", coach: "S1", seat: "A3", berth: "Upper", persona: "General" },
+  "12345": { passengerName: "Priya Patel", gender: "F", age: 26, quota: "GN", coach: "S1", seat: "A4", berth: "Lower", persona: "General" }
 };
 
 const connectedPassengers = {};

@@ -1,19 +1,33 @@
 import React, { useState, useEffect, useRef } from "react";
 import socket from "../socket.js";
+import { Users, AlertCircle, CheckCircle2, ShieldAlert, Coffee } from "lucide-react";
+
+const DEFAULT_SEATS = {
+  A1: "claimed",
+  A2: "empty",
+  A3: "claimed",
+  A4: "sos",
+  B1: "empty",
+  B2: "claimed",
+  B3: "empty",
+  B4: "empty",
+  C1: "empty",
+  C2: "empty",
+  C3: "claimed",
+  C4: "empty"
+};
+
+const DEFAULT_META = {
+  A1: { passengerName: "Arjun Mehta", pnr: "1111111111", foodOrder: ["Executive Veg Thali"] },
+  A3: { passengerName: "Vikram Malhotra", pnr: "1234567890", foodOrder: null },
+  A4: { passengerName: "Ananya Roy", pnr: "12345", foodOrder: null },
+  B2: { passengerName: "Rakesh Singh", pnr: "4444444444", foodOrder: ["Masala Chai & Samosa Combo"] },
+  C3: { passengerName: "Meera Joshi", pnr: "1212121212", foodOrder: null }
+};
 
 export default function TTPage() {
-  const [seats, setSeats] = useState({
-    A1: "empty", A2: "empty", A3: "claimed", A4: "sos",
-    B1: "empty", B2: "empty", B3: "empty", B4: "empty",
-    C1: "empty", C2: "empty", C3: "empty", C4: "empty"
-  });
-
-  const [seatMeta, setSeatMeta] = useState({
-    A3: { passengerName: "Vikram Malhotra", pnr: "1234567890" },
-    A4: { passengerName: "Ananya Roy", pnr: "12345" }
-  });
-  const [passengerManifest, setPassengerManifest] = useState({});
-
+  const [seats, setSeats] = useState(DEFAULT_SEATS);
+  const [seatMeta, setSeatMeta] = useState(DEFAULT_META);
   const [animatingSeats, setAnimatingSeats] = useState({});
   const prevSeatsRef = useRef(seats);
 
@@ -26,7 +40,7 @@ export default function TTPage() {
 
   useEffect(() => {
     function handleStateUpdate(fullState) {
-      if (fullState && fullState.seats) {
+      if (fullState && fullState.seats && Object.keys(fullState.seats).length > 0) {
         Object.keys(fullState.seats).forEach((id) => {
           const currentStatus = typeof fullState.seats[id] === "object" ? fullState.seats[id]?.status : fullState.seats[id];
           const prevStatus = typeof prevSeatsRef.current[id] === "object" ? prevSeatsRef.current[id]?.status : prevSeatsRef.current[id];
@@ -36,10 +50,7 @@ export default function TTPage() {
         });
         prevSeatsRef.current = fullState.seats;
         setSeats(fullState.seats);
-        if (fullState.seatMeta) setSeatMeta(fullState.seatMeta);
-      }
-      if (fullState?.passengerManifest) {
-        setPassengerManifest(fullState.passengerManifest);
+        if (fullState.seatMeta) setSeatMeta((prev) => ({ ...prev, ...fullState.seatMeta }));
       }
     }
 
@@ -80,119 +91,133 @@ export default function TTPage() {
     };
   }, []);
 
-  const manifestEntries = Object.entries(passengerManifest).sort(([, a], [, b]) => {
-    const coachOrder = { S1: 1, S2: 2, B1: 3 };
-    return coachOrder[a.coach] - coachOrder[b.coach] || a.seat.localeCompare(b.seat);
-  });
-  const totalSeats = manifestEntries.length || Object.keys(seats).length;
-  const claimedCount = manifestEntries.length || Object.values(seats).filter((status) => status === "claimed").length;
-  const sosCount = Object.values(seats).filter((status) => status === "sos").length;
+  const safeSeats = seats && Object.keys(seats).length > 0 ? seats : DEFAULT_SEATS;
+  const seatEntries = Object.entries(safeSeats);
+  const totalSeats = seatEntries.length;
+  const claimedCount = seatEntries.filter(([_, s]) => (typeof s === "object" ? s?.status : s) === "claimed").length;
+  const sosCount = seatEntries.filter(([_, s]) => (typeof s === "object" ? s?.status : s) === "sos").length;
   const vacantCount = Math.max(0, totalSeats - claimedCount - sosCount);
 
   return (
-    <div className="tt-container">
-      {/* Overview Stats Strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "28px" }}>
+    <div className="app-page-wrapper">
+      {/* 1. Overview Stats Strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
         <div className="glass-panel" style={{ padding: "18px 22px" }}>
-          <span className="font-mono-tech" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>TOTAL BERTH CAPACITY</span>
-          <div className="font-mono-tech" style={{ fontSize: "2rem", fontWeight: 800, marginTop: "4px" }}>{totalSeats}</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span className="font-mono-tech" style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>TOTAL BERTH CAPACITY</span>
+            <Users style={{ width: 18, height: 18, color: "var(--text-muted)" }} />
+          </div>
+          <div className="font-mono-tech" style={{ fontSize: "2.2rem", fontWeight: 800, marginTop: 4 }}>{totalSeats}</div>
         </div>
+
         <div className="glass-panel" style={{ padding: "18px 22px" }}>
-          <span className="font-mono-tech" style={{ fontSize: "0.75rem", color: "var(--glow-mint)" }}>VERIFIED CLAIMED</span>
-          <div className="font-mono-tech glow-text-mint" style={{ fontSize: "2rem", fontWeight: 800, marginTop: "4px" }}>{claimedCount}</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span className="font-mono-tech glow-text-mint" style={{ fontSize: "0.72rem" }}>VERIFIED CLAIMED</span>
+            <CheckCircle2 style={{ width: 18, height: 18, color: "var(--glow-mint)" }} />
+          </div>
+          <div className="font-mono-tech glow-text-mint" style={{ fontSize: "2.2rem", fontWeight: 800, marginTop: 4 }}>{claimedCount}</div>
         </div>
+
         <div className="glass-panel" style={{ padding: "18px 22px" }}>
-          <span className="font-mono-tech" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>VACANT BERTHS</span>
-          <div className="font-mono-tech" style={{ fontSize: "2rem", fontWeight: 800, marginTop: "4px" }}>{vacantCount}</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span className="font-mono-tech" style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>VACANT BERTHS</span>
+            <AlertCircle style={{ width: 18, height: 18, color: "var(--text-muted)" }} />
+          </div>
+          <div className="font-mono-tech" style={{ fontSize: "2.2rem", fontWeight: 800, marginTop: 4 }}>{vacantCount}</div>
         </div>
+
         <div className="glass-panel" style={{ padding: "18px 22px", borderColor: sosCount > 0 ? "var(--glow-crimson)" : "var(--border-subtle)" }}>
-          <span className="font-mono-tech" style={{ fontSize: "0.75rem", color: "var(--glow-crimson)" }}>ACTIVE SOS ALARMS</span>
-          <div className="font-mono-tech glow-text-crimson" style={{ fontSize: "2rem", fontWeight: 800, marginTop: "4px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span className="font-mono-tech" style={{ fontSize: "0.72rem", color: "var(--glow-crimson)" }}>ACTIVE SOS ALARMS</span>
+            <ShieldAlert style={{ width: 18, height: 18, color: "var(--glow-crimson)" }} />
+          </div>
+          <div className="font-mono-tech glow-text-crimson" style={{ fontSize: "2.2rem", fontWeight: 800, marginTop: 4 }}>
             {sosCount > 0 ? `🚨 ${sosCount}` : "0"}
           </div>
         </div>
       </div>
 
-      {/* Main Split-Flap Matrix Grid */}
-      <div className="glass-panel" style={{ padding: "28px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border-subtle)", flexWrap: "wrap", gap: "10px" }}>
+      {/* 2. Main Split-Flap Matrix Grid */}
+      <div className="glass-panel" style={{ padding: 28 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, paddingBottom: 16, borderBottom: "1px solid var(--border-subtle)", flexWrap: "wrap", gap: 10 }}>
           <div>
-            <div className="font-mono-tech" style={{ fontSize: "0.8rem", color: "var(--glow-mint)", fontWeight: 700 }}>
-              📟 ALL COACHES // OPERATOR CONTROL CENTER (OCC) LIVE PNR MANIFEST
+            <div className="font-mono-tech glow-text-mint" style={{ fontSize: "0.8rem", fontWeight: 700 }}>
+              📟 COACH B-2 // OPERATOR CONTROL CENTER (OCC) LIVE MANIFEST
             </div>
-            <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "4px" }}>
+            <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: 4 }}>
               Ticket Examiner (TTE) Split-Flap Matrix • Real-time LoRa Telemetry Relay
             </div>
           </div>
-          <span className="status-badge-spatial claimed">{totalSeats}-PASSENGER MATRIX</span>
+          <span className="status-badge-spatial claimed font-mono-tech">12-BERTH MATRIX ACTIVE</span>
         </div>
 
-        <div id="seats-container" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px" }}>
-          {manifestEntries.map(([pnr, passenger]) => {
-            const seatId = passenger.seat;
-            const status = seats[seatId] === "sos" ? "sos" : "claimed";
+        <div id="seats-container" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
+          {seatEntries.map(([seatId, rawData]) => {
+            const status = typeof rawData === "object" ? rawData?.status || "empty" : rawData || "empty";
             const meta = seatMeta[seatId] || {};
             const isAnimating = animatingSeats[seatId];
             const isSOS = status === "sos";
+            const isClaimed = status === "claimed";
 
             return (
               <div
-                key={pnr}
-                id={`seat-${passenger.coach}-${seatId}`}
+                key={seatId}
+                id={`seat-${seatId}`}
                 className={`split-flap-spatial-card status-${status} ${isAnimating ? "flap-animating" : ""}`}
               >
-                {/* Flap Display */}
-                <div>
-                  <div className="flap-top-leaf">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                      <span className="font-mono-tech" style={{ fontSize: "2.2rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                        {seatId}
-                      </span>
-                      <span className="font-mono-tech" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        COACH {passenger.coach} • {passenger.berth.toUpperCase()}
-                      </span>
-                    </div>
+                {/* Flap Upper Leaf */}
+                <div className="flap-top-leaf">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span className="font-mono-tech" style={{ fontSize: "2.2rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                      {seatId}
+                    </span>
+                    <span className="font-mono-tech" style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                      {seatId.startsWith("A") ? "MAIN BAY 1" : seatId.startsWith("B") ? "MAIN BAY 2" : "SIDE COUPE"}
+                    </span>
                   </div>
+                </div>
 
-                  <div className="flap-bottom-leaf">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span
-                        id={`status-${seatId}`}
-                        className={`status-badge-spatial ${status}`}
-                      >
-                        {isSOS && "🚨 "}
-                        {status?.toUpperCase() || "EMPTY"}
+                {/* Flap Lower Leaf */}
+                <div className="flap-bottom-leaf">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span
+                      id={`status-${seatId}`}
+                      className={`status-badge-spatial ${status}`}
+                    >
+                      {isSOS && "🚨 "}
+                      {status?.toUpperCase() || "EMPTY"}
+                    </span>
+
+                    {isSOS && (
+                      <span className="font-mono-tech" style={{ color: "var(--glow-crimson)", fontSize: "0.72rem", fontWeight: 700 }}>
+                        EMERGENCY SOS
                       </span>
-
-                      {isSOS && (
-                        <span className="font-mono-tech" style={{ color: "var(--glow-crimson)", fontSize: "0.75rem", fontWeight: 700 }}>
-                          EMERGENCY SOS
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Passenger & Catering Details */}
-                <div style={{ padding: "14px 20px", background: "rgba(0, 0, 0, 0.4)", borderTop: "1px solid var(--border-subtle)", fontSize: "0.85rem", display: "flex", flexDirection: "column", gap: "4px" }}>
+                <div style={{ padding: "14px 20px", background: "rgba(6, 9, 14, 0.6)", borderTop: "1px solid var(--border-subtle)", fontSize: "0.85rem", display: "flex", flexDirection: "column", gap: 6 }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "var(--text-muted)" }}>Occupant:</span>
-                    <strong>{passenger.passengerName}</strong>
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>Occupant:</span>
+                    <strong style={{ color: isClaimed || isSOS ? "var(--text-primary)" : "var(--text-muted)" }}>
+                      {meta.passengerName || (isClaimed ? "Passenger" : "Unoccupied")}
+                    </strong>
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
-                    <span style={{ color: "var(--text-muted)" }}>PNR:</span>
-                    <span className="font-mono-tech" style={{ color: "var(--text-primary)" }}>{pnr}</span>
-                  </div>
-
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
-                    <span style={{ color: "var(--text-muted)" }}>Context:</span>
-                    <span className="font-mono-tech" style={{ color: "var(--glow-mint)" }}>{passenger.age}{passenger.gender} • {passenger.persona}</span>
-                  </div>
+                  {meta.pnr && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                      <span style={{ color: "var(--text-muted)" }}>PNR:</span>
+                      <span className="font-mono-tech glow-text-cyan">{meta.pnr}</span>
+                    </div>
+                  )}
 
                   {meta.foodOrder && (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--glow-mint)" }}>
-                      <span>Pantry Order:</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", color: "var(--glow-mint)" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <Coffee style={{ width: 13, height: 13 }} />
+                        <span>Pantry:</span>
+                      </span>
                       <span className="font-mono-tech">
                         {Array.isArray(meta.foodOrder) ? meta.foodOrder.join(", ") : JSON.stringify(meta.foodOrder)}
                       </span>

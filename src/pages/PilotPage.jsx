@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import socket from "../socket.js";
 import { API_URL } from "../config.js";
+import { Gauge, Radio, ShieldAlert, CheckCircle2, AlertTriangle, Cpu, Activity, RefreshCw } from "lucide-react";
 
 export default function PilotPage() {
   const [telemetry, setTelemetry] = useState({
@@ -124,7 +125,7 @@ export default function PilotPage() {
       }));
       setSimStatus(`✓ Local simulator aspect set: ${aspect}`);
     }
-    setTimeout(() => setSimStatus(""), 3000);
+    setTimeout(() => setSimStatus(""), 3200);
   }
 
   async function triggerAiAdviceReroute() {
@@ -144,33 +145,36 @@ export default function PilotPage() {
       setRawAiAdvice(sampleReroute);
       setSimStatus("✓ Local simulator AI advice updated");
     }
-    setTimeout(() => setSimStatus(""), 3000);
+    setTimeout(() => setSimStatus(""), 3200);
   }
 
   const isRed = (telemetry.signalState || telemetry.signal) === "RED";
 
   return (
-    <div className="pilot-container">
+    <div className="app-page-wrapper">
       {/* Cab Header Banner */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
-        <div>
-          <div className="font-mono-tech" style={{ fontSize: "0.8rem", color: "var(--glow-mint)", fontWeight: 700 }}>
-            🚂 CAB SIGNALING & TRACK TELEMETRY // WAP-7 #30201 [433MHz LoRa RELAY]
+      <div className="glass-panel" style={{ padding: "20px 24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <div className="font-mono-tech glow-text-mint" style={{ fontSize: "0.8rem", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+              <Radio style={{ width: 16, height: 16 }} />
+              <span>LOCOMOTIVE CAB SIGNALING & TRACK TELEMETRY // WAP-7 #30201 [433MHz LoRa]</span>
+            </div>
+            <div style={{ fontSize: "0.88rem", color: "var(--text-secondary)", marginTop: 4 }}>
+              Kavach Automatic Train Protection • Sector: {telemetry.sector} • System Clock: {telemetry.timestamp}
+            </div>
           </div>
-          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "4px" }}>
-            Kavach Automatic Train Protection • Sector: {telemetry.sector} • Clock: {telemetry.timestamp}
-          </div>
+          <span className={`status-badge-spatial font-mono-tech ${isRed ? "sos" : "claimed"}`}>
+            {isRed ? "ALERT: EMERGENCY BRAKE ENGAGED" : "CAB NORMAL // PROCEED AUTHORIZED"}
+          </span>
         </div>
-        <span className={`status-badge-spatial ${isRed ? "sos" : "claimed"}`}>
-          {isRed ? "ALERT: EMERGENCY BRAKE" : "CAB NORMAL // PROCEED"}
-        </span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 24 }}>
         {/* Dominant Optical Aspect Lamp */}
         <div className={`signal-beacon-glass signal-state-${isRed ? "RED" : "GREEN"}`}>
-          <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-            <span className="font-mono-tech" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>MAIN SIGNAL ASPECT</span>
+          <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+            <span className="font-mono-tech" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>CAB SIGNAL ASPECT</span>
             <span className="font-mono-tech" style={{ fontSize: "0.75rem", color: isRed ? "var(--glow-crimson)" : "var(--glow-mint)", fontWeight: 700 }}>
               {isRed ? "DANGER // RED" : "PROCEED // GREEN"}
             </span>
@@ -180,42 +184,42 @@ export default function PilotPage() {
             <div className="lamp-lens-spatial" />
           </div>
 
-          <div className="signal-aspect-title">
+          <div className="signal-aspect-title" style={{ color: isRed ? "var(--glow-crimson)" : "var(--glow-mint)" }}>
             {isRed ? "EMERGENCY BRAKE" : "LINE CLEAR"}
           </div>
 
-          <div style={{ fontSize: "0.95rem", color: "var(--text-secondary)", maxWidth: "340px", marginBottom: "24px" }}>
+          <div style={{ fontSize: "0.95rem", color: "var(--text-secondary)", maxWidth: 360, marginBottom: 24, textAlign: "center" }}>
             {isRed
-              ? "HALT IMMEDIATELY • OBSTRUCTION OR RED ASPECT IN BLOCK"
-              : "AUTHORIZED FOR MAXIMUM SCHEDULED SPEED"}
+              ? "HALT IMMEDIATELY • OBSTRUCTION OR RED ASPECT IN BLOCK SECTOR"
+              : "AUTHORIZED FOR MAXIMUM SCHEDULED CORRIDOR SPEED"}
           </div>
 
           {/* Telemetry Metrics Readout Grid */}
-          <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", paddingTop: "20px", borderTop: "1px solid var(--border-subtle)" }}>
+          <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, paddingTop: 20, borderTop: "1px solid var(--border-subtle)" }}>
             <div className="glass-panel" style={{ padding: "14px 16px", textAlign: "left" }}>
-              <span className="font-mono-tech" style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>TRACK SIGNAL</span>
-              <div className="font-mono-tech" style={{ fontSize: "1.4rem", fontWeight: 800, color: isRed ? "var(--glow-crimson)" : "var(--glow-mint)", marginTop: "2px" }}>
+              <span className="font-mono-tech" style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>TRACK SIGNAL</span>
+              <div className="font-mono-tech" style={{ fontSize: "1.4rem", fontWeight: 800, color: isRed ? "var(--glow-crimson)" : "var(--glow-mint)", marginTop: 2 }}>
                 {isRed ? "RED" : "GREEN"}
               </div>
             </div>
 
             <div className="glass-panel" style={{ padding: "14px 16px", textAlign: "left" }}>
-              <span className="font-mono-tech" style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>CAB SPEED</span>
-              <div className="font-mono-tech" style={{ fontSize: "1.4rem", fontWeight: 800, color: isRed ? "var(--glow-crimson)" : "var(--glow-cyan)", marginTop: "2px" }}>
+              <span className="font-mono-tech" style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>CAB SPEED</span>
+              <div className="font-mono-tech" style={{ fontSize: "1.4rem", fontWeight: 800, color: isRed ? "var(--glow-crimson)" : "var(--glow-cyan)", marginTop: 2 }}>
                 {telemetry.speed} KM/H
               </div>
             </div>
 
             <div className="glass-panel" style={{ padding: "14px 16px", textAlign: "left" }}>
-              <span className="font-mono-tech" style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>FOG VISIBILITY</span>
-              <div className="font-mono-tech" style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--glow-amber)", marginTop: "4px" }}>
+              <span className="font-mono-tech" style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>FOG VISIBILITY</span>
+              <div className="font-mono-tech glow-text-amber" style={{ fontSize: "1.1rem", fontWeight: 700, marginTop: 4 }}>
                 {telemetry.visibility}
               </div>
             </div>
 
             <div className="glass-panel" style={{ padding: "14px 16px", textAlign: "left" }}>
-              <span className="font-mono-tech" style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>BLOCK SECTOR</span>
-              <div className="font-mono-tech" style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)", marginTop: "6px" }}>
+              <span className="font-mono-tech" style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>BLOCK SECTOR</span>
+              <div className="font-mono-tech" style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", marginTop: 6 }}>
                 {telemetry.sector}
               </div>
             </div>
@@ -223,18 +227,19 @@ export default function PilotPage() {
         </div>
 
         {/* AI Dispatch Advisory Telex & Manual Controls */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div className="glass-panel" style={{ flex: 1, padding: "24px", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", paddingBottom: "12px", borderBottom: "1px dashed var(--border-subtle)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div className="glass-panel" style={{ flex: 1, padding: 24, display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, paddingBottom: 12, borderBottom: "1px dashed var(--border-subtle)" }}>
               <div>
-                <span className="font-mono-tech" style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                  📡 AI DISPATCH ADVISORY TELEX
+                <span className="font-mono-tech" style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
+                  <Cpu style={{ width: 16, height: 16, color: "var(--glow-cyan)" }} />
+                  AI DISPATCH ADVISORY TELEX
                 </span>
-                <div className="font-mono-tech" style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                  MEMBER RITU (AI LEAD) INTEGRATION CHANNEL
+                <div className="font-mono-tech" style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: 2 }}>
+                  AGENTIC TRIAGE & COLLISION MITIGATION CHANNEL
                 </div>
               </div>
-              <span className="status-badge-spatial claimed">
+              <span className="status-badge-spatial claimed font-mono-tech">
                 {isTyping ? "STREAMING..." : "FEED IDLE"}
               </span>
             </div>
@@ -244,18 +249,18 @@ export default function PilotPage() {
               className="font-mono-tech"
               style={{
                 flex: 1,
-                padding: "16px",
-                background: "rgba(0, 0, 0, 0.4)",
-                borderRadius: "8px",
-                border: `1px solid ${isRed ? "rgba(255, 42, 85, 0.35)" : "rgba(0, 245, 160, 0.25)"}`,
-                color: isRed ? "var(--glow-crimson)" : "#A7F3D0",
+                padding: 16,
+                background: "rgba(6, 9, 14, 0.75)",
+                borderRadius: 10,
+                border: `1px solid ${isRed ? "rgba(255, 42, 85, 0.45)" : "rgba(0, 245, 160, 0.35)"}`,
+                color: isRed ? "#ffa4b2" : "var(--glow-mint)",
                 fontSize: "0.95rem",
                 lineHeight: 1.7,
                 whiteSpace: "pre-wrap",
-                minHeight: "180px"
+                minHeight: 180
               }}
             >
-              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginBottom: "8px" }}>
+              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginBottom: 8 }}>
                 {">>> [RAILGUARD AI TRIAGE DISPATCH]"}
               </div>
               {displayedAdvice}
@@ -264,21 +269,22 @@ export default function PilotPage() {
           </div>
 
           {/* Standalone Stage Demo Injector */}
-          <div className="glass-panel" style={{ padding: "20px", border: "1px solid rgba(0, 245, 160, 0.3)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-              <span className="font-mono-tech" style={{ fontSize: "0.8rem", color: "var(--glow-cyan)", fontWeight: 700 }}>
+          <div className="glass-panel" style={{ padding: 22, border: "1px solid rgba(0, 216, 246, 0.3)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <span className="font-mono-tech glow-text-cyan" style={{ fontSize: "0.8rem", fontWeight: 700 }}>
                 ⚡ CAB DEMO CONTROLLER & SENSOR INJECTORS
               </span>
-              <span className="status-badge-spatial claimed">STANDALONE READY</span>
+              <span className="status-badge-spatial claimed font-mono-tech">STANDALONE READY</span>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <button
                 type="button"
                 className="btn-spatial btn-spatial-crimson"
                 onClick={() => triggerHardwareSignal("RED")}
               >
-                🚨 INJECT RED SIGNAL
+                <AlertTriangle style={{ width: 16, height: 16 }} />
+                <span>INJECT RED SIGNAL</span>
               </button>
 
               <button
@@ -286,21 +292,23 @@ export default function PilotPage() {
                 className="btn-spatial btn-spatial-mint"
                 onClick={() => triggerHardwareSignal("GREEN")}
               >
-                ✅ INJECT GREEN SIGNAL
+                <CheckCircle2 style={{ width: 16, height: 16 }} />
+                <span>INJECT GREEN SIGNAL</span>
               </button>
             </div>
 
             <button
               type="button"
-              className="btn-spatial btn-spatial-mint"
-              style={{ width: "100%", marginTop: "10px", padding: "10px" }}
+              className="btn-spatial btn-spatial-cyan"
+              style={{ width: "100%", marginTop: 10, padding: 11 }}
               onClick={triggerAiAdviceReroute}
             >
-              🤖 DISPATCH AI REROUTE ADVISORY
+              <Cpu style={{ width: 16, height: 16 }} />
+              <span>DISPATCH AI REROUTE ADVISORY</span>
             </button>
 
             {simStatus && (
-              <div className="font-mono-tech" style={{ fontSize: "0.8rem", color: "var(--glow-mint)", marginTop: "10px", textAlign: "center" }}>
+              <div className="font-mono-tech" style={{ fontSize: "0.78rem", color: "var(--glow-mint)", marginTop: 10, textAlign: "center" }}>
                 {simStatus}
               </div>
             )}

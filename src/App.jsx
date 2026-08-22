@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header.jsx";
 import TelemetryHUD from "./components/TelemetryHUD.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
-import PassengerPage from "./pages/PassengerPage.jsx";
-import TTPage from "./pages/TTPage.jsx";
-import PilotPage from "./pages/PilotPage.jsx";
-import OCCDashboard from "./pages/OCCDashboard.jsx";
+import PassengerPortal from "./pages/PassengerPortal.jsx";
+import TTDashboard from "./pages/TTDashboard.jsx";
+import OCCManifest from "./pages/OCCManifest.jsx";
+import PilotHUD from "./pages/PilotHUD.jsx";
 
 export default function App() {
   const [activeSector, setActiveSector] = useState({
@@ -24,23 +24,25 @@ export default function App() {
 
 function AppShell({ activeSector }) {
   return (
-    <>
-      {/* NASA / ChainGPT Telemetry Corner Overlay */}
-      <TelemetryHUD activeSector={activeSector} />
-
-      {/* Operations Header */}
+    <div className="ops-container min-h-screen flex flex-col justify-between">
+      {/* Global Navigation Header with Universal Emerald Status Badge */}
       <Header />
 
-      {/* Foreground Content Container */}
+      {/* Hero-Only Floating HUD & Universal Fixed Bottom Telemetry Stream */}
+      <TelemetryHUD activeSector={activeSector} />
+
+      {/* Main Viewport Container with Guaranteed Zero-Overlap Safe Clearance */}
       <main className="ops-container" style={{ position: "relative", zIndex: 10 }}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/passenger" element={<PassengerPage />} />
-          <Route path="/tt" element={<TTPage />} />
-          <Route path="/pilot" element={<PilotPage />} />
-          <Route path="/occ" element={<OCCDashboard />} />
+          <Route path="/passenger" element={<PassengerPortal />} />
+          <Route path="/tt" element={<TTDashboard />} />
+          <Route path="/occ" element={<OCCManifest />} />
+          <Route path="/pilot" element={<PilotHUD />} />
+          {/* Catch-all redirect to landing */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-    </>
+    </div>
   );
 }
