@@ -62,6 +62,11 @@ const state = {
     A3: { passengerName: "Vikram Malhotra", pnr: "1234567890", foodOrder: null },
     A4: { passengerName: "Ananya Roy", pnr: "12345", foodOrder: null }
   },
+  passenger_context: {
+    A1: { gender: "M", age: 25, quota: "GN", berth: "Upper" },
+    A2: { gender: "F", age: 68, quota: "SS", berth: "Lower" },
+    A3: { gender: "F", age: 24, quota: "LD", berth: "Middle" }
+  },
   trains: {
     "F99": {
       type: "Freight",
@@ -323,6 +328,38 @@ io.on("connection", (socket) => {
       passengerName: state.seatMeta[seatId].passengerName,
       foodOrder: items
     });
+  });
+
+  // Client -> Server: request_seat_swap { initiatorSeat, targetSeat }
+  socket.on("request_seat_swap", (data) => {
+    const { initiatorSeat, targetSeat } = data || {};
+    const initiator_context = state.passenger_context[initiatorSeat];
+    const target_context = state.passenger_context[targetSeat];
+
+    if (!initiator_context || !target_context) return;
+
+    const exposed_state = { initiator_context, target_context };
+
+    if (target_context.quota === "LD" && initiator_context.gender === "M") {
+      socket.emit("swap_mismatch_warning", {
+        status: "Rejected",
+        reason: "Ladies Quota protection: a male passenger cannot request a Ladies Quota berth.",
+        exposed_state
+      });
+      return;
+    }
+
+    if (
+      target_context.quota === "SS"
+      && target_context.berth === "Lower"
+      && initiator_context.age < 60
+    ) {
+      socket.emit("swap_mismatch_warning", {
+        status: "Rejected",
+        reason: "Senior Citizen Protection: a lower berth under Senior Citizen quota cannot be reassigned to a passenger under 60.",
+        exposed_state
+      });
+    }
   });
 
   // =========================================================================

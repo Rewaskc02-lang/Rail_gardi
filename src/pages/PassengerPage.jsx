@@ -21,6 +21,8 @@ export default function PassengerPage() {
     C1: "empty", C2: "empty", C3: "empty", C4: "empty"
   });
   const [sosConfirmOpen, setSosConfirmOpen] = useState(false);
+  const [swapTargetSeat, setSwapTargetSeat] = useState("A2");
+  const [swapWarning, setSwapWarning] = useState(null);
 
   const receiptModalRef = useRef(null);
 
@@ -43,12 +45,20 @@ export default function PassengerPage() {
       }
     }
 
+    function handleSwapMismatchWarning(warning) {
+      if (warning?.status === "Rejected") {
+        setSwapWarning(warning);
+      }
+    }
+
     socket.on("state_update", handleStateUpdate);
     socket.on("seat_update", handleSeatUpdate);
+    socket.on("swap_mismatch_warning", handleSwapMismatchWarning);
 
     return () => {
       socket.off("state_update", handleStateUpdate);
       socket.off("seat_update", handleSeatUpdate);
+      socket.off("swap_mismatch_warning", handleSwapMismatchWarning);
     };
   }, [selectedSeat]);
 
@@ -92,6 +102,13 @@ export default function PassengerPage() {
   function handleExecuteSOS() {
     socket.emit("sos", {
       seatId: selectedSeat
+    });
+  }
+
+  function handleSeatSwapRequest() {
+    socket.emit("request_seat_swap", {
+      initiatorSeat: "A1",
+      targetSeat: swapTargetSeat
     });
   }
 
@@ -249,6 +266,36 @@ export default function PassengerPage() {
             </div>
           </div>
 
+          {/* Digital Seat Swap Arbitrator */}
+          <div className="glass-panel" style={{ padding: "24px", borderLeft: "4px solid var(--glow-crimson)" }}>
+            <span className="font-mono-tech" style={{ fontSize: "0.72rem", color: "var(--glow-crimson)", letterSpacing: "0.08em" }}>
+              ⚖️ DIGITAL SEAT SWAP ARBITRATOR
+            </span>
+            <p style={{ marginTop: "8px", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              Submit a regulated swap request from Berth A1.
+            </p>
+            <div style={{ display: "flex", gap: "12px", marginTop: "14px" }}>
+              <select
+                id="seat-swap-target"
+                className="form-input-spatial"
+                value={swapTargetSeat}
+                onChange={(e) => setSwapTargetSeat(e.target.value)}
+              >
+                <option value="A2">Seat A2</option>
+                <option value="A3">Seat A3</option>
+              </select>
+              <button
+                id="send-seat-swap-request-btn"
+                type="button"
+                className="btn-spatial btn-spatial-crimson"
+                style={{ whiteSpace: "nowrap" }}
+                onClick={handleSeatSwapRequest}
+              >
+                SEND SWAP REQUEST
+              </button>
+            </div>
+          </div>
+
           {/* Deliberate Emergency SOS Safety Station */}
           <div className="sos-card-spatial">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -333,6 +380,44 @@ export default function PassengerPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {swapWarning && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="swap-warning-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            display: "grid",
+            placeItems: "center",
+            padding: "20px",
+            background: "rgba(45, 0, 0, 0.86)",
+            backdropFilter: "blur(6px)"
+          }}
+        >
+          <div style={{ width: "min(920px, 100%)", background: "#1a0606", border: "2px solid var(--glow-crimson)", borderRadius: "14px", boxShadow: "0 0 48px rgba(255, 42, 85, 0.45)", overflow: "hidden" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px", borderBottom: "1px solid rgba(255, 42, 85, 0.45)" }}>
+              <div>
+                <div className="font-mono-tech" style={{ color: "var(--glow-crimson)", fontSize: "0.75rem", letterSpacing: "0.08em" }}>REGULATORY MISMATCH WARNING</div>
+                <h3 id="swap-warning-title" style={{ marginTop: "4px", color: "#FFF" }}>SEAT SWAP REJECTED</h3>
+              </div>
+              <button type="button" className="btn-spatial btn-spatial-crimson" onClick={() => setSwapWarning(null)}>CLOSE</button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.2fr)", gap: "20px", padding: "22px" }}>
+              <div>
+                <div className="font-mono-tech" style={{ color: "var(--glow-crimson)", fontSize: "0.7rem", letterSpacing: "0.08em" }}>BROKEN RULE</div>
+                <p style={{ marginTop: "12px", color: "#FFD6D6", fontSize: "1rem", lineHeight: 1.6 }}>{swapWarning.reason}</p>
+              </div>
+              <div>
+                <div className="font-mono-tech" style={{ color: "#FF9B9B", fontSize: "0.7rem", letterSpacing: "0.08em", marginBottom: "10px" }}>EXPOSED STATE — JUDGE VERIFICATION</div>
+                <pre style={{ margin: 0, maxHeight: "320px", overflow: "auto", padding: "16px", borderRadius: "8px", background: "#090909", border: "1px solid #5A2424", color: "#F5DADA", fontSize: "0.78rem", lineHeight: 1.55 }}><code>{JSON.stringify(swapWarning.exposed_state, null, 2)}</code></pre>
+              </div>
             </div>
           </div>
         </div>
