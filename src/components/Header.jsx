@@ -78,11 +78,16 @@ export default function Header() {
         {/* Universal Guaranteed Emerald Status Pill */}
         <div
           className="status-indicator-pill"
+          style={{
+            background: "rgba(0, 245, 160, 0.1)",
+            borderColor: "rgba(0, 245, 160, 0.35)",
+            color: "#00F5A0"
+          }}
           title={isConnected ? "WebSocket stream connected at sub-12ms SLA" : "In-Memory Bus Fallback Active"}
         >
-          <span className="hud-dot" />
-          <span className="font-mono-tech">
-            {isConnected ? "TELEMETRY LIVE [SUB-12MS]" : "DEMO BUS ACTIVE [LOCAL]"}
+          <span className="hud-dot" style={{ background: "#00F5A0", boxShadow: "0 0 10px #00F5A0" }} />
+          <span className="font-mono-code font-mono-tech">
+            {isConnected ? "[● LIVE] 433MHz LORA RELAY" : "[● DEMO] 433MHz LORA RELAY"}
           </span>
         </div>
       </header>

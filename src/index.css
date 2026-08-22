@@ -1,32 +1,26 @@
-/* =========================================================================
-   RAILGUARD AI — DESIGN SYSTEM TOKENS & UTILITIES
-   Production-grade Dark Obsidian & Glassmorphic Space-Age Aesthetic
-   ========================================================================= */
-
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap');
 
 :root {
-  /* Surface & Background Canvas */
-  --bg-deep-void: #06090e;
-  --bg-subtle-void: #0a0f1d;
-  --surface-glass: rgba(10, 15, 29, 0.78);
-  --surface-card: rgba(14, 21, 38, 0.85);
-  --surface-card-hover: rgba(18, 28, 50, 0.92);
+  /* Surface & Canvas Void */
+  --bg-void: #070A0F;
+  --bg-deep-void: #070A0F;
+  --panel-bg: rgba(13, 19, 30, 0.78);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --surface-card: rgba(13, 19, 30, 0.85);
   --line: rgba(255, 255, 255, 0.08);
-  --border-subtle: rgba(255, 255, 255, 0.09);
-  --border-focus: rgba(0, 216, 246, 0.45);
+  --border-subtle: rgba(255, 255, 255, 0.08);
 
-  /* Semantic Neon Accent Tokens */
-  --glow-cyan: #00d8f6;
-  --glow-mint: #00f5a0;
-  --glow-amber: #ffb800;
-  --glow-crimson: #ff2a55;
-  --text-muted-slate: #64748b;
+  /* Decoupled Semantic Neon Accent Tokens */
+  --glow-cyan: #00D8F6;
+  --glow-emerald: #00F5A0;
+  --glow-mint: #00F5A0;
+  --glow-crimson: #FF2A55;
+  --glow-amber: #FFB800;
 
   /* Typography Colors */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-primary: #E2E8F0;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
 
   /* Glow Shadows */
   --mint-glow-shadow: 0 0 25px rgba(0, 245, 160, 0.35);
@@ -37,7 +31,7 @@
   /* Fonts */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-heading: 'Space Grotesk', 'Inter', sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  --font-mono: 'IBM Plex Mono', monospace;
 
   /* Split-Flap Matrix Colors */
   --flap-bg-top: #0d1527;
@@ -48,7 +42,7 @@
 }
 
 /* =========================================================================
-   BASE RESETS & DEFAULTS
+   BASE RESETS
    ========================================================================= */
 * {
   box-sizing: border-box;
@@ -57,9 +51,9 @@
 }
 
 html {
-  background-color: var(--bg-deep-void);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+  background-color: var(--bg-void);
+  color: #E2E8F0;
+  font-family: 'Inter', sans-serif;
   scroll-behavior: smooth;
   color-scheme: dark;
 }
@@ -68,9 +62,9 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: radial-gradient(circle at 50% 0%, #0d172e 0%, #06090e 65%);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+  background: radial-gradient(circle at 50% 0%, #0d172e 0%, var(--bg-void) 65%);
+  color: #E2E8F0;
+  font-family: 'Inter', sans-serif;
   line-height: 1.55;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -92,27 +86,35 @@ button {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-  color: var(--text-primary);
+  font-family: 'Space Grotesk', sans-serif;
+  color: #F8FAFC;
   letter-spacing: -0.03em;
   font-weight: 700;
 }
 
-.font-mono-tech {
-  font-family: var(--font-mono);
+.font-mono-code, .font-mono-tech {
+  font-family: 'IBM Plex Mono', monospace;
 }
 
 .font-heading {
-  font-family: var(--font-heading);
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 /* =========================================================================
-   CORE LAYOUT & VIEWPORT ISOLATION (ZERO-OVERLAP STANDARD)
+   ZERO-COLLISION LAYOUT GEOMETRY & PADDING FLOORS
    ========================================================================= */
 .ops-container {
   min-height: 100vh;
   position: relative;
   z-index: 10;
+}
+
+.pt-24 {
+  padding-top: 96px;
+}
+
+.pb-28 {
+  padding-bottom: 112px;
 }
 
 .app-page-wrapper {
@@ -130,36 +132,35 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* =========================================================================
-   GLASSMORPHISM & SURFACE PANELS
+   SURFACE CARDS & GLASSMORPHISM
    ========================================================================= */
 .glass-panel {
-  background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  background: var(--panel-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   transition: border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
   position: relative;
   overflow: hidden;
 }
 
-.glass-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 0%), rgba(255, 255, 255, 0.03), transparent 40%);
-  pointer-events: none;
-}
-
 .glass-panel:hover {
   border-color: rgba(0, 216, 246, 0.25);
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
 }
 
-/* Accent text helpers */
-.glow-text-mint {
-  color: var(--glow-mint);
+.glow-emerald {
+  box-shadow: 0 0 25px rgba(0, 245, 160, 0.35);
+}
+
+.glow-crimson {
+  box-shadow: 0 0 25px rgba(255, 42, 85, 0.45);
+}
+
+.glow-text-mint, .glow-text-emerald {
+  color: var(--glow-emerald);
   text-shadow: 0 0 16px rgba(0, 245, 160, 0.4);
 }
 
@@ -179,7 +180,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* =========================================================================
-   UNIFIED HEADER & STATUS BADGE
+   HEADER & NAVIGATION
    ========================================================================= */
 .spatial-header-wrapper {
   position: fixed;
@@ -195,10 +196,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .spatial-header {
   pointer-events: auto;
-  background: rgba(10, 15, 29, 0.88);
+  background: rgba(10, 15, 29, 0.9);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--panel-border);
   border-radius: 16px;
   padding: 10px 18px;
   display: flex;
@@ -217,17 +218,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .brand-badge {
-  background: linear-gradient(135deg, var(--glow-mint), var(--glow-cyan));
+  background: linear-gradient(135deg, var(--glow-emerald), var(--glow-cyan));
   color: #06090e;
   border-radius: 6px;
   padding: 3px 8px;
-  font: 800 0.68rem var(--font-mono);
+  font: 800 0.68rem 'IBM Plex Mono', monospace;
   letter-spacing: 0.08em;
 }
 
 .brand-title {
   font-weight: 800;
-  color: var(--text-primary);
+  color: #F8FAFC;
   font-size: 1.05rem;
   letter-spacing: -0.02em;
 }
@@ -253,7 +254,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .spatial-nav-link:hover {
-  color: var(--text-primary);
+  color: #FFF;
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.08);
 }
@@ -265,17 +266,17 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
 }
 
-/* Guaranteed Emerald Status Pill */
+/* Status Pill */
 .status-indicator-pill {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 5px 12px;
   border-radius: 20px;
-  background: rgba(6, 78, 59, 0.45);
-  border: 1px solid rgba(0, 245, 160, 0.4);
-  color: #6ee7b7;
-  font: 600 0.7rem var(--font-mono);
+  background: rgba(0, 245, 160, 0.1);
+  border: 1px solid rgba(0, 245, 160, 0.35);
+  color: #00F5A0;
+  font: 600 0.72rem 'IBM Plex Mono', monospace;
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
@@ -284,8 +285,8 @@ h1, h2, h3, h4, h5, h6 {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--glow-mint);
-  box-shadow: 0 0 10px var(--glow-mint);
+  background: var(--glow-emerald);
+  box-shadow: 0 0 10px var(--glow-emerald);
   display: inline-block;
   animation: hud-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
@@ -309,7 +310,7 @@ h1, h2, h3, h4, h5, h6 {
 .hud-glass-pill {
   position: absolute;
   padding: 10px 14px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--panel-border);
   border-radius: 12px;
   background: rgba(10, 15, 29, 0.82);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
@@ -341,14 +342,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hud-label {
-  font: 600 0.65rem var(--font-mono);
+  font: 600 0.65rem 'IBM Plex Mono', monospace;
   color: var(--text-muted);
   letter-spacing: 0.08em;
 }
 
 .hud-value {
   font-weight: 700;
-  color: var(--text-primary);
+  color: #FFF;
 }
 
 /* Fixed Bottom Ticker (Reserved Safe Clearance) */
@@ -364,8 +365,8 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: space-between;
   gap: 16px;
   padding: 0 24px;
-  background: rgba(6, 9, 14, 0.94);
-  border-top: 1px solid var(--border-subtle);
+  background: rgba(7, 10, 15, 0.95);
+  border-top: 1px solid var(--panel-border);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   pointer-events: auto;
@@ -376,25 +377,9 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 8px;
   padding: 5px 12px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--panel-border);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.03);
-}
-
-/* =========================================================================
-   SUB-PAGE NON-COLLIDING STATUS BAR (OPERATIONAL BREADCRUMB)
-   ========================================================================= */
-.interior-status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  border-radius: 12px;
-  background: rgba(10, 15, 29, 0.65);
-  border: 1px solid var(--border-subtle);
-  font-size: 0.78rem;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 /* =========================================================================
@@ -403,11 +388,11 @@ h1, h2, h3, h4, h5, h6 {
 .form-input-spatial {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(6, 9, 14, 0.75);
-  border: 1px solid var(--border-subtle);
+  background: rgba(7, 10, 15, 0.75);
+  border: 1px solid var(--panel-border);
   border-radius: 10px;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
+  color: #FFF;
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 0.88rem;
   transition: all 0.2s ease;
 }
@@ -415,14 +400,14 @@ h1, h2, h3, h4, h5, h6 {
 .form-input-spatial:focus {
   border-color: var(--glow-cyan);
   box-shadow: var(--focus-ring);
-  background: rgba(8, 14, 26, 0.9);
+  background: rgba(10, 15, 29, 0.9);
 }
 
 .btn-spatial, .btn-claim-spatial {
   border-radius: 10px;
   border: 1px solid transparent;
   padding: 12px 18px;
-  font: 700 0.78rem var(--font-mono);
+  font: 700 0.78rem 'IBM Plex Mono', monospace;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
@@ -448,13 +433,13 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-spatial-mint, .btn-claim-spatial {
   background: linear-gradient(135deg, rgba(0, 245, 160, 0.2), rgba(0, 216, 246, 0.2));
-  color: var(--glow-mint);
+  color: var(--glow-emerald);
   border-color: rgba(0, 245, 160, 0.45);
 }
 
 .btn-spatial-mint:hover, .btn-claim-spatial:hover {
   background: linear-gradient(135deg, rgba(0, 245, 160, 0.35), rgba(0, 216, 246, 0.35));
-  border-color: var(--glow-mint);
+  border-color: var(--glow-emerald);
   box-shadow: var(--mint-glow-shadow);
 }
 
@@ -487,7 +472,7 @@ h1, h2, h3, h4, h5, h6 {
    STATUS BADGES
    ========================================================================= */
 .status-badge-spatial {
-  font: 700 0.68rem var(--font-mono);
+  font: 700 0.68rem 'IBM Plex Mono', monospace;
   letter-spacing: 0.06em;
   padding: 4px 8px;
   border-radius: 6px;
@@ -500,12 +485,12 @@ h1, h2, h3, h4, h5, h6 {
 .status-badge-spatial.empty {
   background: rgba(100, 116, 139, 0.15);
   color: var(--text-muted);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--panel-border);
 }
 
 .status-badge-spatial.claimed {
   background: rgba(0, 245, 160, 0.15);
-  color: var(--glow-mint);
+  color: var(--glow-emerald);
   border: 1px solid rgba(0, 245, 160, 0.35);
 }
 
@@ -530,7 +515,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 12px;
   overflow: hidden;
   background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--panel-border);
   transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.2, 1), border-color 0.28s ease, box-shadow 0.28s ease;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
@@ -587,7 +572,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   text-align: center;
   background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--panel-border);
 }
 
 .lamp-bezel-spatial {
@@ -648,7 +633,7 @@ h1, h2, h3, h4, h5, h6 {
   height: 1.1em;
   margin-left: 3px;
   vertical-align: -0.15em;
-  background: var(--glow-mint);
+  background: var(--glow-emerald);
   animation: cursor-blink 0.8s step-end infinite;
 }
 
@@ -665,7 +650,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #06090e;
+  background: #070A0F;
 }
 
 ::-webkit-scrollbar-thumb {

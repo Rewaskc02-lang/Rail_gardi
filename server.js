@@ -324,11 +324,6 @@ io.on("connection", (socket) => {
     const { seatId, pnr, passengerName } = data || {};
     if (!seatId || !Object.hasOwn(state.seats, seatId)) return;
 
-    if (state.seats[seatId] !== "empty") {
-      socket.emit("error", { message: "Seat already claimed by another transaction." });
-      return;
-    }
-
     state.seats[seatId] = "claimed";
     state.seatMeta[seatId] = {
       pnr: pnr || null,
