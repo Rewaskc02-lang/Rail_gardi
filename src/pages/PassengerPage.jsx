@@ -21,7 +21,6 @@ export default function PassengerPage() {
     C1: "empty", C2: "empty", C3: "empty", C4: "empty"
   });
   const [sosConfirmOpen, setSosConfirmOpen] = useState(false);
-  const [sosTriggered, setSosTriggered] = useState(false);
 
   const receiptModalRef = useRef(null);
 
@@ -38,6 +37,10 @@ export default function PassengerPage() {
         ...prev,
         [update.seatId]: update.status
       }));
+
+      if (update.seatId === selectedSeat && update.status === "sos") {
+        setSosConfirmOpen(false);
+      }
     }
 
     socket.on("state_update", handleStateUpdate);
@@ -47,7 +50,7 @@ export default function PassengerPage() {
       socket.off("state_update", handleStateUpdate);
       socket.off("seat_update", handleSeatUpdate);
     };
-  }, []);
+  }, [selectedSeat]);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -84,16 +87,12 @@ export default function PassengerPage() {
       pnr: pnrInput.trim() || "1234567890",
       passengerName: passengerName || "Rahul Sharma"
     });
-    setSeatsState((prev) => ({ ...prev, [selectedSeat]: "claimed" }));
   }
 
   function handleExecuteSOS() {
     socket.emit("sos", {
       seatId: selectedSeat
     });
-    setSosTriggered(true);
-    setSosConfirmOpen(false);
-    setSeatsState((prev) => ({ ...prev, [selectedSeat]: "sos" }));
   }
 
   function handleOrderFood(item) {
@@ -272,7 +271,7 @@ export default function PassengerPage() {
                 style={{ width: "100%", padding: "14px" }}
                 onClick={() => setSosConfirmOpen(true)}
               >
-                {sosTriggered ? "⚠️ SOS TRANSMITTED (ACTIVE)" : "TRIGGER SOS EMERGENCY ALARM"}
+                {seatsState[selectedSeat] === "sos" ? "⚠️ SOS TRANSMITTED (ACTIVE)" : "TRIGGER SOS EMERGENCY ALARM"}
               </button>
             ) : (
               <div style={{ background: "rgba(0, 0, 0, 0.6)", padding: "14px", borderRadius: "8px", border: "1px solid var(--glow-crimson)" }}>

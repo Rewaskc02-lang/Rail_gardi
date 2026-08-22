@@ -20,6 +20,14 @@ const io = new Server(server, {
 // IN-MEMORY STATE SCHEMA (Hard Architecture Rule #2 - Port 5000)
 // =========================================================================
 const state = {
+  freightTrains: {
+    F99: {
+      recorded_context: {
+        client: "Apollo Pharma",
+        max_acceptable_delay_mins: 20
+      }
+    }
+  },
   seats: {
     A1: "empty",
     A2: "empty",
@@ -37,6 +45,17 @@ const state = {
   seatMeta: {
     A3: { passengerName: "Vikram Malhotra", pnr: "1234567890", foodOrder: null },
     A4: { passengerName: "Ananya Roy", pnr: "12345", foodOrder: null }
+  },
+  trains: {
+    "F99": {
+      type: "Freight",
+      status: "Moving",
+      recorded_context: {
+        client: "Apollo Pharma",
+        max_acceptable_delay_mins: 20,
+        penalty_per_min: 5000
+      }
+    }
   },
   telemetry: {
     speed: 78,
@@ -170,6 +189,11 @@ io.on("connection", (socket) => {
     const { seatId, pnr, passengerName } = data || {};
     if (!seatId || !Object.hasOwn(state.seats, seatId)) return;
 
+    if (state.seats[seatId] !== "empty") {
+      socket.emit("error", { message: "Seat already claimed by another transaction." });
+      return;
+    }
+
     state.seats[seatId] = "claimed";
     state.seatMeta[seatId] = {
       pnr: pnr || null,
@@ -216,15 +240,100 @@ io.on("connection", (socket) => {
       foodOrder: items
     });
   });
+
+  // =========================================================================
+  // FREIGHT SLA ARBITRATOR — Challenge #697
+  // Client -> Server: issue_operator_command { trainId, durationMins }
+  // =========================================================================
+  socket.on("issue_operator_command", (data) => {
+    const { trainId, durationMins } = data || {};
+    if (!trainId || !state.trains[trainId]) {
+      socket.emit("negotiation_mismatch_warning", {
+        error: `Train ${trainId || "unknown"} not found in state.`,
+      });
+      return;
+    }
+
+    const train = state.trains[trainId];
+    const ctx = train.recorded_context;
+    const maxDelay = ctx.max_acceptable_delay_mins;
+
+    if (durationMins > maxDelay) {
+      const excessMins = durationMins - maxDelay;
+      const penalty = excessMins * ctx.penalty_per_min;
+
+      const exposed_state = {
+        operator_action: {
+          trainId,
+          requested_delay_mins: durationMins,
+          timestamp: getFormattedTime(),
+        },
+        recorded_context: ctx,
+        arbitration_result: {
+          verdict: "BLOCKED",
+          max_allowed_delay_mins: maxDelay,
+          excess_mins: excessMins,
+          calculated_penalty_inr: penalty,
+          penalty_formatted: `₹${penalty.toLocaleString("en-IN")}`,
+        },
+      };
+
+      socket.emit("negotiation_mismatch_warning", {
+        warning: `SLA BREACH: Requested ${durationMins} min delay exceeds ${ctx.client}'s max ${maxDelay} min threshold by ${excessMins} min. Penalty: ₹${penalty.toLocaleString("en-IN")}.`,
+        exposed_state,
+      });
+
+      // Mock LLM resolution after 2.5s
+      setTimeout(() => {
+        socket.emit("ai_resolution_ready", {
+          resolution: `AI Routing Alternative: Divert ${trainId} via Loop Line 4 (Mathura Bypass). Estimated added transit: 12 min. SLA preserved within ${maxDelay} min window. No penalty incurred. Route approved by Freight Corridor OCC.`,
+          suggested_route: {
+            via: "Loop Line 4 — Mathura Bypass",
+            added_transit_mins: 12,
+            sla_preserved: true,
+            penalty_incurred: 0,
+          },
+        });
+      }, 2500);
+    } else {
+      socket.emit("negotiation_mismatch_warning", {
+        warning: null,
+        exposed_state: {
+          operator_action: {
+            trainId,
+            requested_delay_mins: durationMins,
+            timestamp: getFormattedTime(),
+          },
+          recorded_context: ctx,
+          arbitration_result: {
+            verdict: "APPROVED",
+            max_allowed_delay_mins: maxDelay,
+            excess_mins: 0,
+            calculated_penalty_inr: 0,
+          },
+        },
+      });
+    }
+  });
+
+  socket.on("disconnect", (reason) => {
+    console.log(`Socket disconnected: ${socket.id} (${reason})`);
+    socket.removeAllListeners();
+  });
 });
 
-const PORT = process.env.PORT || 5000;
+// macOS Control Center commonly reserves port 5000, so the local API defaults to 3001.
+const PORT = Number(process.env.PORT) || 3001;
+const FALLBACK_PORT = 3002;
+let fallbackAttempted = false;
 
 server.on("error", (err) => {
-  if (err.code === "EADDRINUSE") {
-    console.error(`⚠️ Port ${PORT} is already in use by another instance or process.`);
-    console.error(`To kill the existing process, run: lsof -ti:${PORT} | xargs kill -9`);
-    process.exit(1);
+  if (err.code === "EADDRINUSE" && !fallbackAttempted && PORT !== FALLBACK_PORT) {
+    fallbackAttempted = true;
+    console.error(`⚠️ Port ${PORT} is already in use. Trying fallback port ${FALLBACK_PORT}.`);
+    server.listen(FALLBACK_PORT, () => {
+      console.log(`RailGuard AI Server running on http://localhost:${FALLBACK_PORT}`);
+    });
   } else {
     console.error("Server error:", err);
   }

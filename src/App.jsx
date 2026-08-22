@@ -6,6 +6,7 @@ import LandingPage from "./pages/LandingPage.jsx";
 import PassengerPage from "./pages/PassengerPage.jsx";
 import TTPage from "./pages/TTPage.jsx";
 import PilotPage from "./pages/PilotPage.jsx";
+import OCCDashboard from "./pages/OCCDashboard.jsx";
 
 export default function App() {
   const [activeSector, setActiveSector] = useState({
@@ -37,6 +38,7 @@ function AppShell({ activeSector }) {
           <Route path="/passenger" element={<PassengerPage />} />
           <Route path="/tt" element={<TTPage />} />
           <Route path="/pilot" element={<PilotPage />} />
+          <Route path="/occ" element={<OCCDashboard />} />
         </Routes>
       </main>
     </>
