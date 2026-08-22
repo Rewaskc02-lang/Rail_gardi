@@ -314,6 +314,13 @@ io.on("connection", (socket) => {
 
   // Client -> Server: request_initial_state
   socket.on("request_initial_state", () => {
+    socket.emit("state_update", {
+      seats: generateSeatMap(),
+      seatMeta: state.seatMeta,
+      passengerManifest: pnrDatabase,
+      telemetry: state.telemetry,
+      aiAdvice: { text: state.aiAdvice, advice: state.aiAdvice }
+    });
     socket.emit("seat_update", generateSeatMap());
   });
 
@@ -340,6 +347,12 @@ io.on("connection", (socket) => {
     }
 
     connectedPassengers[socket.id] = pnr;
+    state.seats[passenger.seat] = "claimed";
+    state.seatMeta[passenger.seat] = {
+      pnr,
+      passengerName: passenger.passengerName,
+      foodOrder: state.seatMeta[passenger.seat]?.foodOrder || null
+    };
     const response = {
       ok: true,
       pnr,

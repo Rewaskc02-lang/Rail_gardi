@@ -79,11 +79,18 @@ export default function TTPage() {
 
     socket.on("state_update", handleStateUpdate);
     socket.on("seat_update", handleSeatUpdate);
-    socket.emit("request_initial_state");
+
+    function requestInitialState() {
+      socket.emit("request_initial_state");
+    }
+
+    socket.on("connect", requestInitialState);
+    requestInitialState();
 
     return () => {
       socket.off("state_update", handleStateUpdate);
       socket.off("seat_update", handleSeatUpdate);
+      socket.off("connect", requestInitialState);
     };
   }, []);
 
@@ -147,10 +154,11 @@ export default function TTPage() {
         <div id="seats-container" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px" }}>
           {manifestEntries.map(([pnr, passenger]) => {
             const seatId = passenger.seat;
-            const status = seats[seatId] === "sos" ? "sos" : "claimed";
+            const status = seats[seatId] || "empty";
             const meta = seatMeta[seatId] || {};
             const isAnimating = animatingSeats[seatId];
             const isSOS = status === "sos";
+            const isClaimed = status === "claimed";
 
             return (
               <div
@@ -194,18 +202,22 @@ export default function TTPage() {
                 <div style={{ padding: "14px 20px", background: "rgba(0, 0, 0, 0.4)", borderTop: "1px solid var(--border-subtle)", fontSize: "0.85rem", display: "flex", flexDirection: "column", gap: "4px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "var(--text-muted)" }}>Occupant:</span>
-                    <strong>{passenger.passengerName}</strong>
+                    <strong>{isClaimed || isSOS ? passenger.passengerName : "Unoccupied"}</strong>
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
-                    <span style={{ color: "var(--text-muted)" }}>PNR:</span>
-                    <span className="font-mono-tech" style={{ color: "var(--text-primary)" }}>{pnr}</span>
-                  </div>
+                  {(isClaimed || isSOS) && (
+                    <>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                        <span style={{ color: "var(--text-muted)" }}>PNR:</span>
+                        <span className="font-mono-tech" style={{ color: "var(--text-primary)" }}>{pnr}</span>
+                      </div>
 
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
-                    <span style={{ color: "var(--text-muted)" }}>Context:</span>
-                    <span className="font-mono-tech" style={{ color: "var(--glow-mint)" }}>{passenger.age}{passenger.gender} • {passenger.persona}</span>
-                  </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                        <span style={{ color: "var(--text-muted)" }}>Context:</span>
+                        <span className="font-mono-tech" style={{ color: "var(--glow-mint)" }}>{passenger.age}{passenger.gender} • {passenger.persona}</span>
+                      </div>
+                    </>
+                  )}
 
                   {meta.foodOrder && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--glow-mint)" }}>
