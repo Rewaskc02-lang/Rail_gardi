@@ -90,12 +90,24 @@ const state = {
   aiAdvice: "Track sector clear. Normal line speed authorized. Maintain 433MHz LoRa link."
 };
 
-// Hardcoded PNR Database for Instant Demo Validation
-const PNR_DATABASE = {
-  "1234567890": "Rahul Sharma",
-  "12345": "Priya Patel",
-  "9876543210": "Amitabh Sen"
+// Hardcoded PNR Database for strict demo authentication and seat-swap routing.
+const pnrDatabase = {
+  "1111111111": { passengerName: "Arjun Mehta", gender: "M", age: 25, quota: "GN", coach: "S1", seat: "A1", berth: "Upper", persona: "General" },
+  "2222222222": { passengerName: "Shanti Kapoor", gender: "F", age: 68, quota: "SS", coach: "S1", seat: "A2", berth: "Lower", persona: "Senior" },
+  "3333333333": { passengerName: "Nisha Verma", gender: "F", age: 28, quota: "MED-PREG", coach: "S2", seat: "B1", berth: "Lower", persona: "Pregnant" },
+  "4444444444": { passengerName: "Rakesh Singh", gender: "M", age: 45, quota: "MED-PATIENT", coach: "S2", seat: "B2", berth: "Middle", persona: "Patient" },
+  "5555555555": { passengerName: "Kavya Iyer", gender: "F", age: 31, quota: "GN", coach: "S1", seat: "A3", berth: "Middle", persona: "Standard" },
+  "6666666666": { passengerName: "Mohit Bansal", gender: "M", age: 34, quota: "GN", coach: "S1", seat: "A4", berth: "Side Upper", persona: "Standard" },
+  "7777777777": { passengerName: "Farah Khan", gender: "F", age: 39, quota: "GN", coach: "S2", seat: "B3", berth: "Upper", persona: "Standard" },
+  "8888888888": { passengerName: "Dev Patel", gender: "M", age: 52, quota: "GN", coach: "S2", seat: "B4", berth: "Side Lower", persona: "Standard" },
+  "9999999999": { passengerName: "Anita Das", gender: "F", age: 42, quota: "GN", coach: "B1", seat: "C1", berth: "Lower", persona: "Standard" },
+  "1010101010": { passengerName: "Vivek Rao", gender: "M", age: 29, quota: "GN", coach: "B1", seat: "C2", berth: "Middle", persona: "Standard" },
+  "1212121212": { passengerName: "Meera Joshi", gender: "F", age: 36, quota: "GN", coach: "B1", seat: "C3", berth: "Upper", persona: "Standard" },
+  "1313131313": { passengerName: "Sanjay Nair", gender: "M", age: 47, quota: "GN", coach: "B1", seat: "C4", berth: "Side Lower", persona: "Standard" }
 };
+
+const connectedPassengers = {};
+const pendingCrossCoachSwaps = {};
 
 // Helper for formatting timestamps
 function getFormattedTime() {
@@ -178,10 +190,15 @@ async function requestFreightAiResolution({ trainId, context, maxDelay }) {
 // POST /login & /api/login — PNR verification
 function handleLogin(req, res) {
   const { pnr } = req.body;
-  if (!pnr || !PNR_DATABASE[pnr]) {
+  if (!pnr || !pnrDatabase[pnr]) {
     return res.status(401).json({ ok: false, error: "Invalid PNR. Please verify ticket." });
   }
-  return res.json({ ok: true, passengerName: PNR_DATABASE[pnr] });
+  const passenger = pnrDatabase[pnr];
+  return res.json({
+    ok: true,
+    passengerName: passenger.passengerName,
+    assignment: { coach: passenger.coach, seat: passenger.seat, berth: passenger.berth }
+  });
 }
 app.post("/login", handleLogin);
 app.post("/api/login", handleLogin);
@@ -254,6 +271,7 @@ function handleGetState(req, res) {
   res.json({
     seats: state.seats,
     seatMeta: state.seatMeta,
+    passengerManifest: pnrDatabase,
     telemetry: state.telemetry,
     aiAdvice: state.aiAdvice
   });
@@ -269,8 +287,34 @@ io.on("connection", (socket) => {
   socket.emit("state_update", {
     seats: state.seats,
     seatMeta: state.seatMeta,
+    passengerManifest: pnrDatabase,
     telemetry: state.telemetry,
     aiAdvice: { text: state.aiAdvice, advice: state.aiAdvice }
+  });
+
+  // Client -> Server: login_pnr { pnr }
+  socket.on("login_pnr", (data, acknowledge) => {
+    const pnr = typeof data?.pnr === "string" ? data.pnr.trim() : "";
+    const passenger = pnrDatabase[pnr];
+
+    if (!passenger) {
+      const response = { ok: false, error: "Invalid PNR. Please verify ticket." };
+      socket.emit("pnr_login_result", response);
+      if (typeof acknowledge === "function") acknowledge(response);
+      return;
+    }
+
+    connectedPassengers[pnr] = socket.id;
+    const response = {
+      ok: true,
+      pnr,
+      passengerName: passenger.passengerName,
+      assignment: { coach: passenger.coach, seat: passenger.seat, berth: passenger.berth },
+      passengerContext: passenger
+    };
+
+    socket.emit("pnr_login_result", response);
+    if (typeof acknowledge === "function") acknowledge(response);
   });
 
   // Client -> Server: claim_seat { seatId, pnr, passengerName }
@@ -358,6 +402,61 @@ io.on("connection", (socket) => {
         status: "Rejected",
         reason: "Senior Citizen Protection: a lower berth under Senior Citizen quota cannot be reassigned to a passenger under 60.",
         exposed_state
+      });
+    }
+  });
+
+  // Client -> Server: request_cross_coach_swap { initiatorPnr, targetCoach, targetSeat }
+  socket.on("request_cross_coach_swap", (data) => {
+    const { initiatorPnr, targetCoach, targetSeat } = data || {};
+    const initiator_context = pnrDatabase[initiatorPnr];
+    const targetPnr = Object.keys(pnrDatabase).find((pnr) => {
+      const passenger = pnrDatabase[pnr];
+      return passenger.coach === targetCoach && passenger.seat === targetSeat;
+    });
+    const target_context = targetPnr ? pnrDatabase[targetPnr] : null;
+
+    if (!initiator_context || !target_context || connectedPassengers[initiatorPnr] !== socket.id) return;
+
+    const protectedLowerBerth = target_context.berth === "Lower"
+      && (target_context.quota === "SS" || target_context.persona === "Pregnant");
+
+    if (protectedLowerBerth && initiator_context.quota !== target_context.quota) {
+      socket.emit("swap_mismatch_warning", {
+        status: "Rejected",
+        reason: "Regulatory Protection: Cannot solicit lower berths from Senior/Pregnant passengers.",
+        exposed_state: { target_context, initiator_context }
+      });
+      return;
+    }
+
+    const targetSocketId = connectedPassengers[targetPnr];
+    if (targetSocketId) {
+      const swapRequestId = randomUUID();
+      pendingCrossCoachSwaps[swapRequestId] = { initiatorPnr, targetPnr };
+      io.to(targetSocketId).emit("swap_request_received", {
+        swapRequestId,
+        initiatorPnr,
+        initiatorCoach: initiator_context.coach,
+        initiatorSeat: initiator_context.seat,
+        targetCoach,
+        targetSeat
+      });
+    }
+  });
+
+  // Client -> Server: respond_to_cross_coach_swap { swapRequestId, accepted }
+  socket.on("respond_to_cross_coach_swap", (data) => {
+    const { swapRequestId, accepted } = data || {};
+    const pendingSwap = pendingCrossCoachSwaps[swapRequestId];
+    if (!pendingSwap || connectedPassengers[pendingSwap.targetPnr] !== socket.id) return;
+
+    delete pendingCrossCoachSwaps[swapRequestId];
+    const initiatorSocketId = connectedPassengers[pendingSwap.initiatorPnr];
+    if (initiatorSocketId) {
+      io.to(initiatorSocketId).emit("swap_request_response", {
+        swapRequestId,
+        accepted: Boolean(accepted)
       });
     }
   });
@@ -461,6 +560,15 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", (reason) => {
     console.log(`Socket disconnected: ${socket.id} (${reason})`);
+    const disconnectedPnr = Object.keys(connectedPassengers).find((pnr) => connectedPassengers[pnr] === socket.id);
+    if (disconnectedPnr) delete connectedPassengers[disconnectedPnr];
+
+    Object.keys(pendingCrossCoachSwaps).forEach((swapRequestId) => {
+      const pendingSwap = pendingCrossCoachSwaps[swapRequestId];
+      if (pendingSwap && (pendingSwap.initiatorPnr === disconnectedPnr || pendingSwap.targetPnr === disconnectedPnr)) {
+        delete pendingCrossCoachSwaps[swapRequestId];
+      }
+    });
     socket.removeAllListeners();
   });
 });

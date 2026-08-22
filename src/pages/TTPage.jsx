@@ -12,6 +12,7 @@ export default function TTPage() {
     A3: { passengerName: "Vikram Malhotra", pnr: "1234567890" },
     A4: { passengerName: "Ananya Roy", pnr: "12345" }
   });
+  const [passengerManifest, setPassengerManifest] = useState({});
 
   const [animatingSeats, setAnimatingSeats] = useState({});
   const prevSeatsRef = useRef(seats);
@@ -36,6 +37,9 @@ export default function TTPage() {
         prevSeatsRef.current = fullState.seats;
         setSeats(fullState.seats);
         if (fullState.seatMeta) setSeatMeta(fullState.seatMeta);
+      }
+      if (fullState?.passengerManifest) {
+        setPassengerManifest(fullState.passengerManifest);
       }
     }
 
@@ -76,11 +80,14 @@ export default function TTPage() {
     };
   }, []);
 
-  const seatEntries = Object.entries(seats);
-  const totalSeats = seatEntries.length;
-  const claimedCount = seatEntries.filter(([_, s]) => (typeof s === "object" ? s.status : s) === "claimed").length;
-  const sosCount = seatEntries.filter(([_, s]) => (typeof s === "object" ? s.status : s) === "sos").length;
-  const vacantCount = totalSeats - claimedCount - sosCount;
+  const manifestEntries = Object.entries(passengerManifest).sort(([, a], [, b]) => {
+    const coachOrder = { S1: 1, S2: 2, B1: 3 };
+    return coachOrder[a.coach] - coachOrder[b.coach] || a.seat.localeCompare(b.seat);
+  });
+  const totalSeats = manifestEntries.length || Object.keys(seats).length;
+  const claimedCount = manifestEntries.length || Object.values(seats).filter((status) => status === "claimed").length;
+  const sosCount = Object.values(seats).filter((status) => status === "sos").length;
+  const vacantCount = Math.max(0, totalSeats - claimedCount - sosCount);
 
   return (
     <div className="tt-container">
@@ -111,27 +118,27 @@ export default function TTPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border-subtle)", flexWrap: "wrap", gap: "10px" }}>
           <div>
             <div className="font-mono-tech" style={{ fontSize: "0.8rem", color: "var(--glow-mint)", fontWeight: 700 }}>
-              📟 COACH B-2 // OPERATOR CONTROL CENTER (OCC) LIVE MANIFEST
+              📟 ALL COACHES // OPERATOR CONTROL CENTER (OCC) LIVE PNR MANIFEST
             </div>
             <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "4px" }}>
               Ticket Examiner (TTE) Split-Flap Matrix • Real-time LoRa Telemetry Relay
             </div>
           </div>
-          <span className="status-badge-spatial claimed">12-BERTH MATRIX</span>
+          <span className="status-badge-spatial claimed">{totalSeats}-PASSENGER MATRIX</span>
         </div>
 
         <div id="seats-container" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px" }}>
-          {seatEntries.map(([seatId, rawData]) => {
-            const status = typeof rawData === "object" ? rawData.status : rawData;
+          {manifestEntries.map(([pnr, passenger]) => {
+            const seatId = passenger.seat;
+            const status = seats[seatId] === "sos" ? "sos" : "claimed";
             const meta = seatMeta[seatId] || {};
             const isAnimating = animatingSeats[seatId];
             const isSOS = status === "sos";
-            const isClaimed = status === "claimed";
 
             return (
               <div
-                key={seatId}
-                id={`seat-${seatId}`}
+                key={pnr}
+                id={`seat-${passenger.coach}-${seatId}`}
                 className={`split-flap-spatial-card status-${status} ${isAnimating ? "flap-animating" : ""}`}
               >
                 {/* Flap Display */}
@@ -142,7 +149,7 @@ export default function TTPage() {
                         {seatId}
                       </span>
                       <span className="font-mono-tech" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        {seatId.startsWith("A") ? "MAIN BAY 1" : seatId.startsWith("B") ? "MAIN BAY 2" : "SIDE COUPE"}
+                        COACH {passenger.coach} • {passenger.berth.toUpperCase()}
                       </span>
                     </div>
                   </div>
@@ -170,15 +177,18 @@ export default function TTPage() {
                 <div style={{ padding: "14px 20px", background: "rgba(0, 0, 0, 0.4)", borderTop: "1px solid var(--border-subtle)", fontSize: "0.85rem", display: "flex", flexDirection: "column", gap: "4px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "var(--text-muted)" }}>Occupant:</span>
-                    <strong>{meta.passengerName || (isClaimed ? "Passenger" : "Unoccupied")}</strong>
+                    <strong>{passenger.passengerName}</strong>
                   </div>
 
-                  {meta.pnr && (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
-                      <span style={{ color: "var(--text-muted)" }}>PNR:</span>
-                      <span className="font-mono-tech" style={{ color: "var(--text-primary)" }}>{meta.pnr}</span>
-                    </div>
-                  )}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                    <span style={{ color: "var(--text-muted)" }}>PNR:</span>
+                    <span className="font-mono-tech" style={{ color: "var(--text-primary)" }}>{pnr}</span>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                    <span style={{ color: "var(--text-muted)" }}>Context:</span>
+                    <span className="font-mono-tech" style={{ color: "var(--glow-mint)" }}>{passenger.age}{passenger.gender} • {passenger.persona}</span>
+                  </div>
 
                   {meta.foodOrder && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--glow-mint)" }}>
