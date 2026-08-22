@@ -127,7 +127,7 @@ export default function OCCDashboard() {
               sla_preserved: true,
               penalty_incurred: 0
             },
-            source: "gemini-3.7-flash"
+            source: "railguard-ai"
           });
         }, 1200);
       }
@@ -157,7 +157,7 @@ export default function OCCDashboard() {
         </div>
         <h2 style={{ fontSize: "1.45rem", marginTop: 6 }}>B2B Logistics SLA Arbitrator Console</h2>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginTop: 4 }}>
-          Challenge #697 — Intercepts and blocks manual routing overrides that breach contract freight SLAs. Enforces real-time penalty calculations and Gemini AI alternative routing.
+          Challenge #697 — Intercepts and blocks manual routing overrides that breach contract freight SLAs. Enforces real-time penalty calculations and AI-assisted alternative routing.
         </p>
       </div>
 
@@ -350,7 +350,7 @@ export default function OCCDashboard() {
                     }}>
                       <div className="font-mono-tech glow-text-mint" style={{ fontSize: "0.72rem", letterSpacing: "0.06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                         <Cpu style={{ width: 15, height: 15 }} />
-                        <span>AI RESOLUTION STRATEGY READY [GEMINI]</span>
+                        <span>AI RESOLUTION STRATEGY READY</span>
                       </div>
                       <p style={{ color: "#d1fae5", fontSize: "0.9rem", lineHeight: 1.65 }}>
                         {aiResolution.resolution}
@@ -366,7 +366,7 @@ export default function OCCDashboard() {
                   {isProcessing && !aiResolution && (
                     <div className="font-mono-tech" style={{ marginTop: 20, color: "var(--glow-cyan)", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: 8 }}>
                       <RefreshCw className="loader-icon" style={{ width: 16, height: 16 }} />
-                      <span>Synthesizing zero-penalty alternative route with Gemini AI...</span>
+                      <span>Synthesizing a zero-penalty alternative route...</span>
                     </div>
                   )}
 

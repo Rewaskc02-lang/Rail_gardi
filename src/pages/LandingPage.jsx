@@ -59,7 +59,7 @@ export default function LandingPage({ telemetry }) {
 
           <div className="pillar-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
             <div className="glass-panel" style={{ padding: 28 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(0, 216, 246, 0.12)", border: "1px solid rgba(0, 216, 246, 0.3)", display: "grid", placeItems: "center", marginBottom: 18 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(250, 237, 38, 0.12)", border: "1px solid rgba(250, 237, 38, 0.32)", display: "grid", placeItems: "center", marginBottom: 18 }}>
                 <Cpu style={{ width: 22, height: 22, color: "var(--glow-cyan)" }} />
               </div>
               <h3 style={{ fontSize: "1.2rem", marginBottom: 8 }}>ESP32 + LoRa Mesh</h3>
@@ -69,7 +69,7 @@ export default function LandingPage({ telemetry }) {
             </div>
 
             <div className="glass-panel" style={{ padding: 28 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(0, 245, 160, 0.12)", border: "1px solid rgba(0, 245, 160, 0.3)", display: "grid", placeItems: "center", marginBottom: 18 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(0, 245, 155, 0.12)", border: "1px solid rgba(0, 245, 155, 0.30)", display: "grid", placeItems: "center", marginBottom: 18 }}>
                 <Shield style={{ width: 22, height: 22, color: "var(--glow-mint)" }} />
               </div>
               <h3 style={{ fontSize: "1.2rem", marginBottom: 8 }}>Real-Time State Bus</h3>
@@ -79,7 +79,7 @@ export default function LandingPage({ telemetry }) {
             </div>
 
             <div className="glass-panel" style={{ padding: 28 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(255, 184, 0, 0.12)", border: "1px solid rgba(255, 184, 0, 0.3)", display: "grid", placeItems: "center", marginBottom: 18 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(212, 139, 112, 0.14)", border: "1px solid rgba(212, 139, 112, 0.32)", display: "grid", placeItems: "center", marginBottom: 18 }}>
                 <Radio style={{ width: 22, height: 22, color: "var(--glow-amber)" }} />
               </div>
               <h3 style={{ fontSize: "1.2rem", marginBottom: 8 }}>Agentic AI Triage</h3>
@@ -137,8 +137,8 @@ export default function LandingPage({ telemetry }) {
                 marginTop: 18,
                 padding: "12px 16px",
                 borderRadius: 8,
-                background: "rgba(0, 245, 160, 0.08)",
-                border: "1px solid rgba(0, 245, 160, 0.3)",
+                background: "rgba(250, 237, 38, 0.08)",
+                border: "1px solid rgba(250, 237, 38, 0.30)",
                 color: "var(--glow-mint)",
                 fontSize: "0.8rem",
                 display: "flex",

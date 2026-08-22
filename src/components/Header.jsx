@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import socket from "../socket.js";
+import { ContactRound, TicketCheck, TrainFront, Workflow } from "lucide-react";
 
 /**
  * Header — Master Spatial Navigation Bar
@@ -9,25 +9,13 @@ import socket from "../socket.js";
  */
 export default function Header() {
   const location = useLocation();
-  const [isConnected, setIsConnected] = useState(socket.connected ?? true);
+  const [timeString, setTimeString] = useState("");
 
   useEffect(() => {
-    function onConnect() {
-      setIsConnected(true);
-    }
-    function onDisconnect() {
-      // In local demo or reconnecting phases, keep the fallback bus active
-      setIsConnected(false);
-    }
-
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-    setIsConnected(socket.connected);
-
-    return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-    };
+    const updateClock = () => setTimeString(new Date().toISOString().slice(11, 23) + " UTC");
+    updateClock();
+    const timer = setInterval(updateClock, 1000);
+    return () => clearInterval(timer);
   }, []);
 
   return (
@@ -35,7 +23,7 @@ export default function Header() {
       <header className="spatial-header">
         {/* Brand / Logo */}
         <Link to="/" className="spatial-brand">
-          <span className="brand-badge">LORA MESH</span>
+          <span className="brand-badge">RG/01</span>
           <span className="brand-title font-heading">RAILGUARD AI</span>
         </Link>
 
@@ -46,7 +34,7 @@ export default function Header() {
             className={`spatial-nav-link ${location.pathname === "/passenger" ? "active" : ""}`}
             title="Passenger Portal"
           >
-            <span>👤</span>
+            <ContactRound aria-hidden="true" size={15} strokeWidth={1.8} />
             <span>Passenger</span>
           </Link>
           <Link
@@ -54,7 +42,7 @@ export default function Header() {
             className={`spatial-nav-link ${location.pathname === "/tt" ? "active" : ""}`}
             title="Conductor TT Manifest Matrix"
           >
-            <span>🎫</span>
+            <TicketCheck aria-hidden="true" size={15} strokeWidth={1.8} />
             <span>TT Manifest</span>
           </Link>
           <Link
@@ -62,7 +50,7 @@ export default function Header() {
             className={`spatial-nav-link ${location.pathname === "/occ" ? "active" : ""}`}
             title="Challenge #697 B2B SLA Arbitrator"
           >
-            <span>📋</span>
+            <Workflow aria-hidden="true" size={15} strokeWidth={1.8} />
             <span>OCC Arbitrator</span>
           </Link>
           <Link
@@ -70,26 +58,15 @@ export default function Header() {
             className={`spatial-nav-link ${location.pathname === "/pilot" ? "active" : ""}`}
             title="Loco-Pilot Cab HUD"
           >
-            <span>🚦</span>
+            <TrainFront aria-hidden="true" size={15} strokeWidth={1.8} />
             <span>Pilot HUD</span>
           </Link>
         </nav>
 
-        {/* Universal Guaranteed Emerald Status Pill */}
-        <div
-          className="status-indicator-pill"
-          style={{
-            background: "rgba(0, 245, 160, 0.1)",
-            borderColor: "rgba(0, 245, 160, 0.35)",
-            color: "#00F5A0"
-          }}
-          title={isConnected ? "WebSocket stream connected at sub-12ms SLA" : "In-Memory Bus Fallback Active"}
-        >
-          <span className="hud-dot" style={{ background: "#00F5A0", boxShadow: "0 0 10px #00F5A0" }} />
-          <span className="font-mono-code font-mono-tech">
-            {isConnected ? "[● LIVE] 433MHz LORA RELAY" : "[● DEMO] 433MHz LORA RELAY"}
-          </span>
-        </div>
+        <time className="header-timestamp font-mono-tech" dateTime={new Date().toISOString()}>
+          {timeString || "20:39:03.045 UTC"}
+        </time>
+
       </header>
     </div>
   );

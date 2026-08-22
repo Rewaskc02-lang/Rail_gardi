@@ -15,7 +15,7 @@ export default function ThreeTrainCanvas() {
 
     // 1. SCENE SETUP
     const scene = new THREE.Scene();
-    const bgVoid = 0x070b12; // Deep cosmic slate navy
+    const bgVoid = 0x211926; // Diadora Bright Delivery deep violet-charcoal
     scene.background = new THREE.Color(bgVoid);
     scene.fog = new THREE.FogExp2(bgVoid, 0.012);
 
@@ -34,14 +34,14 @@ export default function ThreeTrainCanvas() {
     container.appendChild(renderer.domElement);
 
     // Ambient & Directional Lighting for Realistic Locomotive Shading
-    const ambientLight = new THREE.AmbientLight(0x0f172a, 1.8);
+    const ambientLight = new THREE.AmbientLight(0x46344e, 1.8);
     scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(0x38bdf8, 1.5);
+    const sunLight = new THREE.DirectionalLight(0xfaed26, 1.5);
     sunLight.position.set(20, 30, 20);
     scene.add(sunLight);
 
-    const blueBackLight = new THREE.DirectionalLight(0x00f5a0, 1.0);
+    const blueBackLight = new THREE.DirectionalLight(0x00f59b, 1.0);
     blueBackLight.position.set(-20, 15, -20);
     scene.add(blueBackLight);
 
@@ -105,7 +105,7 @@ export default function ThreeTrainCanvas() {
           `#include <color_vertex>
             float d = length(abs(position) / vec3(45., 12., 45.));
             d = clamp(d, 0., 1.);
-            vColor = mix(vec3(0., 245., 160.), vec3(0., 180., 255.), d) / 255.;
+            vColor = mix(vec3(250., 237., 38.), vec3(157., 141., 143.), d) / 255.;
           `
         ).replace(
           `#include <begin_vertex>`,
@@ -139,8 +139,8 @@ export default function ThreeTrainCanvas() {
 
     // 3. GLOWING VECTOR RAIL CORRIDOR & SLEEPERS
     const railGroup = new THREE.Group();
-    const glowLineMat = new THREE.MeshBasicMaterial({ color: 0x00f5a0, transparent: true, opacity: 0.85 });
-    const darkRailMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.2 });
+    const glowLineMat = new THREE.MeshBasicMaterial({ color: 0xfaed26, transparent: true, opacity: 0.85 });
+    const darkRailMat = new THREE.MeshStandardMaterial({ color: 0x46344e, metalness: 0.9, roughness: 0.2 });
 
     const railGeo = new THREE.BoxGeometry(0.09, 0.18, 360);
     const leftRail = new THREE.Mesh(railGeo, glowLineMat);
@@ -158,7 +158,7 @@ export default function ThreeTrainCanvas() {
     }
 
     // Ground Grid
-    const groundGrid = new THREE.GridHelper(360, 72, 0x00f5a0, 0x0c192c);
+    const groundGrid = new THREE.GridHelper(360, 72, 0xfaed26, 0x2d2333);
     groundGrid.position.set(0, -0.05, -80);
     groundGrid.material.opacity = 0.35;
     groundGrid.material.transparent = true;
@@ -171,23 +171,23 @@ export default function ThreeTrainCanvas() {
 
     // Body Material - High specularity metallic navy
     const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x0b1322,
+      color: 0x46344e,
       metalness: 0.92,
       roughness: 0.18
     });
 
     const darkAccentMat = new THREE.MeshStandardMaterial({
-      color: 0x040810,
+      color: 0x2d2333,
       metalness: 0.95,
       roughness: 0.1
     });
 
     const glassMat = new THREE.MeshBasicMaterial({
-      color: 0x00d8f6
+      color: 0xfaed26
     });
 
     const glowStripeMat = new THREE.MeshBasicMaterial({
-      color: 0x00f5a0
+      color: 0xfaed26
     });
 
     // --- LOCOMOTIVE HEAD ENGINE ---

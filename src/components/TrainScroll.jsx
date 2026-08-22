@@ -95,8 +95,8 @@ export default function TrainScroll({ telemetry }) {
     const cw = canvas.width / dpr;
     const ch = canvas.height / dpr;
 
-    // Deep Obsidian Dark Void Background fill
-    ctx.fillStyle = "#06090e";
+    // Diadora Bright Delivery deep-violet background fill
+    ctx.fillStyle = "#211926";
     ctx.fillRect(0, 0, cw, ch);
 
     const imgRatio = img.naturalWidth / img.naturalHeight;
@@ -214,39 +214,9 @@ export default function TrainScroll({ telemetry }) {
       )}
 
       {/* Sticky Viewport Stage */}
-      <div style={{ height: "100vh", position: "sticky", top: 0, overflow: "hidden", display: "grid", placeItems: "center", background: "#06090e" }}>
+      <div style={{ height: "100vh", position: "sticky", top: 0, overflow: "hidden", display: "grid", placeItems: "center", background: "#211926" }}>
         {/* Hardware Rendered Scrollytelling Canvas */}
         <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
-
-        {/* Floating Spatial Micro-Status Pill */}
-        <div
-          className="font-mono-tech"
-          style={{
-            position: "absolute",
-            zIndex: 4,
-            top: 86,
-            right: 24,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "8px 14px",
-            borderRadius: 20,
-            background: "rgba(10, 15, 29, 0.85)",
-            border: "1px solid var(--border-subtle)",
-            fontSize: "0.7rem",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
-            backdropFilter: "blur(12px)"
-          }}
-        >
-          <span className="status-dot" style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--glow-mint)", boxShadow: "0 0 10px var(--glow-mint)" }} />
-          <span style={{ color: "var(--glow-mint)", fontWeight: 700 }}>LORA 433MHz ACTIVE</span>
-          <span style={{ color: "var(--text-muted)" }}>|</span>
-          <span style={{ color: "var(--text-secondary)" }}>
-            SECTOR: <span style={{ color: "#FFF" }}>{telemetry?.sector || "100KM NORTH"}</span>
-          </span>
-          <span style={{ color: "var(--text-muted)" }}>|</span>
-          <span style={{ color: "var(--glow-cyan)" }}>&lt; 12ms</span>
-        </div>
 
         {/* =========================================================================
             TIMED STORY OVERLAYS (FRAMER MOTION TEXT BEATS)
@@ -337,7 +307,7 @@ export default function TrainScroll({ telemetry }) {
                 ESP32 Solar Clamps
               </span>
               <span style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(0, 245, 160, 0.12)", border: "1px solid rgba(0, 245, 160, 0.3)", color: "var(--glow-mint)", fontSize: "0.72rem" }}>
-                Gemini 3.7 AI Triage
+                AI Route Triage
               </span>
             </div>
           </div>

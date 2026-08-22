@@ -31,18 +31,26 @@ function AppShell({ activeSector }) {
       {/* Hero-Only Floating HUD & Universal Fixed Bottom Telemetry Stream */}
       <TelemetryHUD activeSector={activeSector} />
 
-      {/* Main Viewport Container with Guaranteed Zero-Overlap Safe Clearance */}
-      <main className="ops-container" style={{ position: "relative", zIndex: 10 }}>
+      {/* Landing and operations routes use distinct viewport shells. */}
+      <div className="ops-container" style={{ position: "relative", zIndex: 10 }}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/passenger" element={<PassengerPortal />} />
-          <Route path="/tt" element={<TTDashboard />} />
-          <Route path="/occ" element={<OCCManifest />} />
-          <Route path="/pilot" element={<PilotHUD />} />
+          <Route path="/passenger" element={<OperationsShell><PassengerPortal /></OperationsShell>} />
+          <Route path="/tt" element={<OperationsShell><TTDashboard /></OperationsShell>} />
+          <Route path="/occ" element={<OperationsShell><OCCManifest /></OperationsShell>} />
+          <Route path="/pilot" element={<OperationsShell><PilotHUD /></OperationsShell>} />
           {/* Catch-all redirect to landing */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </main>
+      </div>
     </div>
+  );
+}
+
+function OperationsShell({ children }) {
+  return (
+    <main className="pt-24 pb-28 px-4 sm:px-8 md:px-12 max-w-6xl mx-auto space-y-8 min-h-screen relative z-10 operational-route-shell">
+      {children}
+    </main>
   );
 }

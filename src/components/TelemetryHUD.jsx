@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import socket from "../socket.js";
 
 /**
@@ -7,12 +6,7 @@ import socket from "../socket.js";
  * Restricts complex floating corner cards strictly to the Landing route (`/`).
  * Mounts a universal, slim, non-colliding fixed bottom telemetry ticker across all views.
  */
-export default function TelemetryHUD({ activeSector = { sectorNumber: 1, status: "TRACK CLEAR" } }) {
-  const location = useLocation();
-  const isLandingPage = location.pathname === "/";
-
-  const [timeString, setTimeString] = useState("");
-  const [latency, setLatency] = useState("8.4");
+export default function TelemetryHUD() {
   const [telemetryState, setTelemetryState] = useState({
     speed: 78,
     visibility: "< 45m",
@@ -20,19 +14,6 @@ export default function TelemetryHUD({ activeSector = { sectorNumber: 1, status:
     signal: "GREEN",
     sector: "100KM NORTH BLOCK"
   });
-
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      setTimeString(now.toISOString().slice(11, 23) + " UTC");
-      const jitter = (7.6 + Math.sin(Date.now() / 1400) * 1.8).toFixed(1);
-      setLatency(jitter);
-    };
-    updateClock();
-    const timer = setInterval(updateClock, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     function handleState(fullState) {
@@ -67,65 +48,7 @@ export default function TelemetryHUD({ activeSector = { sectorNumber: 1, status:
 
   return (
     <>
-      {/* 1. HERO-ONLY FLOATING CORNER HUD (Strictly restricted to Landing route) */}
-      {isLandingPage && (
-        <div className="telemetry-hud-container" aria-label="Spatial Telemetry HUD">
-          {/* Top Left: Atomic Clock & Radio Link */}
-          <div className="hud-glass-pill hud-top-left">
-            <div className="hud-metric-row">
-              <span className="hud-label">ATOMIC CLOCK</span>
-              <span className="hud-value font-mono-tech">{timeString || "00:00:00.000 UTC"}</span>
-            </div>
-            <div className="hud-metric-row">
-              <span className="hud-label">RADIO FREQ</span>
-              <span className="hud-value font-mono-tech glow-text-mint">
-                915.2 MHz • RSSI -82 dBm
-              </span>
-            </div>
-            <div className="hud-metric-row">
-              <span className="hud-label">RADIO LATENCY</span>
-              <span className="hud-value font-mono-tech glow-text-cyan">
-                {latency} ms [SUB-12MS SLA]
-              </span>
-            </div>
-          </div>
-
-          {/* Top Right: Sector Clearance & Block Aspect */}
-          <div className="hud-glass-pill hud-top-right">
-            <div className="hud-metric-row" style={{ justifyContent: "flex-end" }}>
-              <span className="hud-label">BLOCK SECTOR</span>
-              <span className="hud-value font-mono-tech glow-text-cyan">
-                SECTOR {activeSector.sectorNumber || 1} / 04
-              </span>
-            </div>
-            <div className="hud-metric-row" style={{ justifyContent: "flex-end" }}>
-              <span className="hud-label">VERIFICATION</span>
-              <span
-                className="font-mono-tech"
-                style={{
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                  padding: "3px 8px",
-                  borderRadius: "5px",
-                  background: isRed ? "rgba(255, 42, 85, 0.2)" : "rgba(0, 245, 160, 0.15)",
-                  color: isRed ? "var(--glow-crimson)" : "var(--glow-mint)",
-                  border: `1px solid ${isRed ? "var(--glow-crimson)" : "rgba(0, 245, 160, 0.4)"}`
-                }}
-              >
-                {isRed ? "⚠️ SECTOR BLOCKED" : "SECTOR CLEARED [LORA VERIFIED]"}
-              </span>
-            </div>
-            <div className="hud-metric-row" style={{ justifyContent: "flex-end" }}>
-              <span className="hud-label">LOCATION</span>
-              <span className="hud-value font-mono-tech glow-text-amber" style={{ fontSize: "0.75rem" }}>
-                {telemetryState.sector || "100KM NORTH BLOCK"}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. UNIVERSAL SLIM BOTTOM TICKER (Binds dynamically with zero collisions) */}
+      {/* Universal slim bottom ticker; floating HUD cards were intentionally removed. */}
       <footer className="hud-bottom-bar" aria-label="Live Operations Telemetry Stream">
         <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           {/* Signal Aspect Pill */}
@@ -178,7 +101,7 @@ export default function TelemetryHUD({ activeSector = { sectorNumber: 1, status:
 
         {/* Brand / Relay Status */}
         <div className="font-mono-tech hide-mobile" style={{ fontSize: "0.72rem", color: "var(--glow-cyan)", opacity: 0.9 }}>
-          ⚡ 433MHz LORA MESH // ACTIVE & TRANSMITTING
+          ⚡ 433MHz CAB TELEMETRY // LIVE
         </div>
       </footer>
     </>
