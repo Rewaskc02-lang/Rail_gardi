@@ -111,6 +111,24 @@ const pnrDatabase = {
 const connectedPassengers = {};
 const pendingCrossCoachSwaps = {};
 
+// Preserve the legacy TT matrix contract while using pnrDatabase as the source of truth.
+const generateSeatMap = () => {
+  const seatMap = {
+    A1: "empty", A2: "empty", A3: "empty", A4: "empty",
+    B1: "empty", B2: "empty", B3: "empty", B4: "empty",
+    C1: "empty", C2: "empty", C3: "empty", C4: "empty"
+  };
+
+  Object.keys(seatMap).forEach((seatId) => {
+    seatMap[seatId] = state.seats[seatId] || "empty";
+  });
+
+  return seatMap;
+};
+
+const findSocketIdByPnr = (pnr) => Object.keys(connectedPassengers)
+  .find((socketId) => connectedPassengers[socketId] === pnr);
+
 // Helper for formatting timestamps
 function getFormattedTime() {
   const now = new Date();
@@ -271,7 +289,7 @@ app.post("/api/ai-advice", handleAiAdvice);
 // GET /state & /api/state — Current state snapshot
 function handleGetState(req, res) {
   res.json({
-    seats: state.seats,
+    seats: generateSeatMap(),
     seatMeta: state.seatMeta,
     passengerManifest: pnrDatabase,
     telemetry: state.telemetry,
@@ -287,11 +305,25 @@ app.get("/api/state", handleGetState);
 io.on("connection", (socket) => {
   // Broadcast full state on connect (ensures instant sync without blank screens)
   socket.emit("state_update", {
-    seats: state.seats,
+    seats: generateSeatMap(),
     seatMeta: state.seatMeta,
     passengerManifest: pnrDatabase,
     telemetry: state.telemetry,
     aiAdvice: { text: state.aiAdvice, advice: state.aiAdvice }
+  });
+
+  // Client -> Server: request_initial_state
+  socket.on("request_initial_state", () => {
+    socket.emit("seat_update", generateSeatMap());
+  });
+
+  // Client -> Server: admin_reset_state
+  socket.on("admin_reset_state", () => {
+    Object.keys(state.seats).forEach((seatId) => {
+      state.seats[seatId] = "empty";
+    });
+    state.seatMeta = {};
+    io.emit("seat_update", generateSeatMap());
   });
 
   // Client -> Server: login_pnr { pnr }
@@ -300,13 +332,14 @@ io.on("connection", (socket) => {
     const passenger = pnrDatabase[pnr];
 
     if (!passenger) {
-      const response = { ok: false, error: "Invalid PNR. Please verify ticket." };
+      const response = { ok: false, error: "Invalid PNR" };
+      socket.emit("login_error", { message: "Invalid PNR" });
       socket.emit("pnr_login_result", response);
       if (typeof acknowledge === "function") acknowledge(response);
       return;
     }
 
-    connectedPassengers[pnr] = socket.id;
+    connectedPassengers[socket.id] = pnr;
     const response = {
       ok: true,
       pnr,
@@ -315,7 +348,9 @@ io.on("connection", (socket) => {
       passengerContext: passenger
     };
 
+    socket.emit("login_success", { passengerInfo: passenger });
     socket.emit("pnr_login_result", response);
+    io.emit("seat_update", generateSeatMap());
     if (typeof acknowledge === "function") acknowledge(response);
   });
 
@@ -331,12 +366,7 @@ io.on("connection", (socket) => {
       foodOrder: state.seatMeta[seatId]?.foodOrder || null
     };
 
-    io.emit("seat_update", {
-      seatId,
-      status: "claimed",
-      passengerName: state.seatMeta[seatId].passengerName,
-      pnr: state.seatMeta[seatId].pnr
-    });
+    io.emit("seat_update", generateSeatMap());
   });
 
   // Client -> Server: sos { seatId }
@@ -346,11 +376,7 @@ io.on("connection", (socket) => {
 
     state.seats[seatId] = "sos";
 
-    io.emit("seat_update", {
-      seatId,
-      status: "sos",
-      passengerName: state.seatMeta[seatId]?.passengerName || "Occupant"
-    });
+    io.emit("seat_update", generateSeatMap());
   });
 
   // Client -> Server: food_order { seatId, items }
@@ -363,12 +389,7 @@ io.on("connection", (socket) => {
     }
     state.seatMeta[seatId].foodOrder = items;
 
-    io.emit("seat_update", {
-      seatId,
-      status: state.seats[seatId] || "claimed",
-      passengerName: state.seatMeta[seatId].passengerName,
-      foodOrder: items
-    });
+    io.emit("seat_update", generateSeatMap());
   });
 
   // Client -> Server: request_seat_swap { initiatorSeat, targetSeat }
@@ -413,7 +434,7 @@ io.on("connection", (socket) => {
     });
     const target_context = targetPnr ? pnrDatabase[targetPnr] : null;
 
-    if (!initiator_context || !target_context || connectedPassengers[initiatorPnr] !== socket.id) return;
+    if (!initiator_context || !target_context || connectedPassengers[socket.id] !== initiatorPnr) return;
 
     const protectedLowerBerth = target_context.berth === "Lower"
       && (target_context.quota === "SS" || target_context.persona === "Pregnant");
@@ -427,7 +448,7 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const targetSocketId = connectedPassengers[targetPnr];
+    const targetSocketId = findSocketIdByPnr(targetPnr);
     if (targetSocketId) {
       const swapRequestId = randomUUID();
       pendingCrossCoachSwaps[swapRequestId] = { initiatorPnr, targetPnr };
@@ -446,10 +467,10 @@ io.on("connection", (socket) => {
   socket.on("respond_to_cross_coach_swap", (data) => {
     const { swapRequestId, accepted } = data || {};
     const pendingSwap = pendingCrossCoachSwaps[swapRequestId];
-    if (!pendingSwap || connectedPassengers[pendingSwap.targetPnr] !== socket.id) return;
+    if (!pendingSwap || connectedPassengers[socket.id] !== pendingSwap.targetPnr) return;
 
     delete pendingCrossCoachSwaps[swapRequestId];
-    const initiatorSocketId = connectedPassengers[pendingSwap.initiatorPnr];
+    const initiatorSocketId = findSocketIdByPnr(pendingSwap.initiatorPnr);
     if (initiatorSocketId) {
       io.to(initiatorSocketId).emit("swap_request_response", {
         swapRequestId,
@@ -557,8 +578,8 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", (reason) => {
     console.log(`Socket disconnected: ${socket.id} (${reason})`);
-    const disconnectedPnr = Object.keys(connectedPassengers).find((pnr) => connectedPassengers[pnr] === socket.id);
-    if (disconnectedPnr) delete connectedPassengers[disconnectedPnr];
+    const disconnectedPnr = connectedPassengers[socket.id];
+    delete connectedPassengers[socket.id];
 
     Object.keys(pendingCrossCoachSwaps).forEach((swapRequestId) => {
       const pendingSwap = pendingCrossCoachSwaps[swapRequestId];
@@ -566,6 +587,7 @@ io.on("connection", (socket) => {
         delete pendingCrossCoachSwaps[swapRequestId];
       }
     });
+    io.emit("seat_update", generateSeatMap());
     socket.removeAllListeners();
   });
 });
