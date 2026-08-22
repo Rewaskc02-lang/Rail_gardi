@@ -1,19 +1,35 @@
 import express from "express";
 import http from "http";
+import { randomUUID } from "crypto";
 import { Server } from "socket.io";
 import cors from "cors";
 
 const app = express();
 const server = http.createServer(app);
 
-app.use(cors());
+const allowedOrigins = new Set(
+  (process.env.CLIENT_ORIGINS || "http://localhost:5173,http://127.0.0.1:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+);
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Origin is not allowed."));
+  },
+  methods: ["GET", "POST"]
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions
 });
 
 // =========================================================================
@@ -80,6 +96,74 @@ const PNR_DATABASE = {
 function getFormattedTime() {
   const now = new Date();
   return now.toTimeString().split(" ")[0];
+}
+
+function buildDemoFreightResolution(trainId, maxDelay) {
+  return {
+    resolution: `AI Routing Alternative: Divert ${trainId} via Loop Line 4 (Mathura Bypass). Estimated added transit: 12 min. SLA preserved within ${maxDelay} min window. No penalty incurred. Route approved by Freight Corridor OCC.`,
+    suggested_route: {
+      via: "Loop Line 4 — Mathura Bypass",
+      added_transit_mins: 12,
+      sla_preserved: true,
+      penalty_incurred: 0
+    },
+    source: "demo-fallback"
+  };
+}
+
+async function requestFreightAiResolution({ trainId, context, maxDelay }) {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  // Keep the demo functional until a server-side Gemini key is configured.
+  if (!apiKey) {
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    return buildDemoFreightResolution(trainId, maxDelay);
+  }
+
+  const model = process.env.GEMINI_MODEL || "gemini-3.7-flash";
+  const prompt = [
+    "You are a railway freight OCC routing advisor.",
+    `Train: ${trainId}`,
+    `Client: ${context.client}`,
+    `Maximum acceptable delay: ${maxDelay} minutes.`,
+    "Provide a concise, operationally safe alternative route that preserves the SLA."
+  ].join("\n");
+
+  // Deliberately no AbortSignal timeout: the OCC remains pending until Gemini replies or fails.
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    }
+  );
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || `Gemini request failed with HTTP ${response.status}`);
+  }
+
+  const resolution = payload?.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text)
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+
+  if (!resolution) {
+    throw new Error("Gemini returned no usable resolution.");
+  }
+
+  return {
+    resolution,
+    suggested_route: null,
+    source: "gemini"
+  };
 }
 
 // =========================================================================
@@ -246,10 +330,24 @@ io.on("connection", (socket) => {
   // Client -> Server: issue_operator_command { trainId, durationMins }
   // =========================================================================
   socket.on("issue_operator_command", (data) => {
-    const { trainId, durationMins } = data || {};
-    if (!trainId || !state.trains[trainId]) {
+    const payload = data && typeof data === "object" && !Array.isArray(data) ? data : {};
+    const { trainId, durationMins } = payload;
+    const requestId = typeof payload.requestId === "string" && payload.requestId.length <= 128
+      ? payload.requestId
+      : randomUUID();
+
+    if (typeof trainId !== "string" || !Object.hasOwn(state.trains, trainId)) {
       socket.emit("negotiation_mismatch_warning", {
         error: `Train ${trainId || "unknown"} not found in state.`,
+        requestId
+      });
+      return;
+    }
+
+    if (!Number.isInteger(durationMins) || durationMins < 0 || durationMins > 60) {
+      socket.emit("negotiation_mismatch_warning", {
+        error: "durationMins must be an integer between 0 and 60.",
+        requestId
       });
       return;
     }
@@ -281,23 +379,31 @@ io.on("connection", (socket) => {
       socket.emit("negotiation_mismatch_warning", {
         warning: `SLA BREACH: Requested ${durationMins} min delay exceeds ${ctx.client}'s max ${maxDelay} min threshold by ${excessMins} min. Penalty: ₹${penalty.toLocaleString("en-IN")}.`,
         exposed_state,
+        requestId
       });
 
-      // Mock LLM resolution after 2.5s
-      setTimeout(() => {
-        socket.emit("ai_resolution_ready", {
-          resolution: `AI Routing Alternative: Divert ${trainId} via Loop Line 4 (Mathura Bypass). Estimated added transit: 12 min. SLA preserved within ${maxDelay} min window. No penalty incurred. Route approved by Freight Corridor OCC.`,
-          suggested_route: {
-            via: "Loop Line 4 — Mathura Bypass",
-            added_transit_mins: 12,
-            sla_preserved: true,
-            penalty_incurred: 0,
-          },
+      socket.emit("ai_resolution_pending", { requestId });
+
+      // Do not await here: the Gemini network request yields immediately, leaving all socket handlers responsive.
+      void requestFreightAiResolution({ trainId, context: ctx, maxDelay })
+        .then((aiResolution) => {
+          if (socket.connected) {
+            socket.emit("ai_resolution_ready", { ...aiResolution, requestId });
+          }
+        })
+        .catch((error) => {
+          console.error("Freight AI resolution failed:", error);
+          if (socket.connected) {
+            socket.emit("ai_resolution_error", {
+              requestId,
+              message: "The AI resolution service did not return a usable answer. Please retry the request."
+            });
+          }
         });
-      }, 2500);
     } else {
       socket.emit("negotiation_mismatch_warning", {
         warning: null,
+        requestId,
         exposed_state: {
           operator_action: {
             trainId,

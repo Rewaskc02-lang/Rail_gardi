@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import socket from "../socket.js";
 
 const TRAIN_OPTIONS = [
@@ -14,30 +14,72 @@ export default function OCCDashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [warningData, setWarningData] = useState(null);
   const [aiResolution, setAiResolution] = useState(null);
+  const [aiError, setAiError] = useState("");
+  const activeRequestIdRef = useRef(null);
 
-  const handleIssueCommand = useCallback(() => {
-    setWarningData(null);
-    setAiResolution(null);
-    setIsProcessing(true);
+  useEffect(() => {
+    function isActiveResponse(data) {
+      return data?.requestId && data.requestId === activeRequestIdRef.current;
+    }
 
-    // Wire listeners BEFORE emitting so we never miss the response
-    socket.once("negotiation_mismatch_warning", (data) => {
+    function handleWarning(data) {
+      if (!isActiveResponse(data)) return;
+
       setWarningData(data);
       setModalOpen(true);
       if (!data.warning) {
-        // Approved — no AI follow-up expected
         setIsProcessing(false);
       }
-    });
+    }
 
-    socket.once("ai_resolution_ready", (data) => {
+    function handleAiPending(data) {
+      if (isActiveResponse(data)) {
+        setIsProcessing(true);
+      }
+    }
+
+    function handleAiResolution(data) {
+      if (!isActiveResponse(data)) return;
+
       setAiResolution(data);
+      setAiError("");
       setIsProcessing(false);
-    });
+    }
+
+    function handleAiError(data) {
+      if (!isActiveResponse(data)) return;
+
+      setAiError(data.message || "The AI resolution service did not return an answer.");
+      setIsProcessing(false);
+    }
+
+    socket.on("negotiation_mismatch_warning", handleWarning);
+    socket.on("ai_resolution_pending", handleAiPending);
+    socket.on("ai_resolution_ready", handleAiResolution);
+    socket.on("ai_resolution_error", handleAiError);
+
+    return () => {
+      socket.off("negotiation_mismatch_warning", handleWarning);
+      socket.off("ai_resolution_pending", handleAiPending);
+      socket.off("ai_resolution_ready", handleAiResolution);
+      socket.off("ai_resolution_error", handleAiError);
+    };
+  }, []);
+
+  const handleIssueCommand = useCallback(() => {
+    const requestId = globalThis.crypto?.randomUUID?.()
+      || `occ-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    activeRequestIdRef.current = requestId;
+    setWarningData(null);
+    setAiResolution(null);
+    setAiError("");
+    setIsProcessing(true);
 
     socket.emit("issue_operator_command", {
       trainId: selectedTrain,
       durationMins: delayMins,
+      requestId
     });
   }, [selectedTrain, delayMins]);
 
@@ -45,10 +87,9 @@ export default function OCCDashboard() {
     setModalOpen(false);
     setWarningData(null);
     setAiResolution(null);
+    setAiError("");
     setIsProcessing(false);
-    // Clean up any dangling listeners
-    socket.off("negotiation_mismatch_warning");
-    socket.off("ai_resolution_ready");
+    activeRequestIdRef.current = null;
   };
 
   const isBreached = warningData?.warning != null;
@@ -262,8 +303,23 @@ export default function OCCDashboard() {
                   )}
                   {isProcessing && !aiResolution && (
                     <div className="font-mono-tech" style={{ marginTop: 20, color: "#ff9999", fontSize: "0.78rem" }}>
-                      ⏳ AI resolution engine processing... (≈2.5s)
+                      ⏳ Waiting for the AI resolution service. This request has no forced timeout.
                     </div>
+                  )}
+                  {aiError && (
+                    <div className="font-mono-tech" style={{ marginTop: 20, color: "#ff9999", fontSize: "0.78rem" }}>
+                      ⚠️ {aiError}
+                    </div>
+                  )}
+                  {isBreached && (
+                    <button
+                      type="button"
+                      className="btn-spatial btn-spatial-mint"
+                      style={{ marginTop: 16, width: "100%" }}
+                      onClick={handleIssueCommand}
+                    >
+                      {isProcessing ? "RESEND LLM REQUEST" : "RETRY LLM REQUEST"}
+                    </button>
                   )}
                 </div>
               )}

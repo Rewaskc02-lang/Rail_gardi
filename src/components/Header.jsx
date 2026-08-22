@@ -40,10 +40,16 @@ export default function Header() {
             <span>👤</span> Passenger
           </Link>
           <Link
+            to="/occ"
+            className={`spatial-nav-link ${location.pathname === "/occ" ? "active" : ""}`}
+          >
+            <span>📋</span> OCC Manifest
+          </Link>
+          <Link
             to="/tt"
             className={`spatial-nav-link ${location.pathname === "/tt" ? "active" : ""}`}
           >
-            <span>📋</span> OCC Manifest
+            <span>🎫</span> TT Dashboard
           </Link>
           <Link
             to="/pilot"
