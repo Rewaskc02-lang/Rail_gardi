@@ -117,6 +117,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .font-mono-code, .font-mono-tech {
   font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.08em;
 }
 
 .font-heading {
@@ -617,6 +618,29 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid var(--signal-crimson);
   box-shadow: var(--crimson-glow-shadow);
   animation: sos-pulse-anim 1.6s ease-in-out infinite;
+}
+
+/* LED-like operational indicators for active signal and emergency states. */
+.pulse-glow.claimed {
+  animation: pulse-glow-green 1.8s ease-in-out infinite;
+}
+
+.pulse-glow.sos {
+  animation: pulse-glow-red 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow-green {
+  0%, 100% { filter: brightness(1); box-shadow: 0 0 6px rgba(0, 245, 155, 0.35); }
+  50% { filter: brightness(1.25); box-shadow: 0 0 18px rgba(0, 245, 155, 0.78); }
+}
+
+@keyframes pulse-glow-red {
+  0%, 100% { filter: brightness(1); box-shadow: 0 0 7px rgba(255, 46, 77, 0.42); }
+  50% { filter: brightness(1.3); box-shadow: 0 0 20px rgba(255, 46, 77, 0.88); }
+}
+
+.occ-active-console {
+  box-shadow: 0 0 15px rgba(255, 255, 0, 0.1), 0 16px 40px rgba(10, 5, 15, 0.58);
 }
 
 @keyframes sos-pulse-anim {

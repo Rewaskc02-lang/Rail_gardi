@@ -162,7 +162,7 @@ export default function OCCDashboard() {
       </div>
 
       {/* Command Dispatch Panel */}
-      <div className="glass-panel" style={{ padding: 28 }}>
+      <div className="glass-panel occ-active-console" style={{ padding: 28 }}>
         <div className="font-mono-tech" style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: 18, letterSpacing: "0.08em" }}>
           ISSUE OPERATOR ROUTING & HOLD COMMAND
         </div>

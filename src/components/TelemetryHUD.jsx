@@ -54,7 +54,7 @@ export default function TelemetryHUD() {
           {/* Signal Aspect Pill */}
           <div className="hud-telemetry-pill">
             <span
-              className="hud-dot"
+              className={`hud-dot pulse-glow ${isRed ? "sos" : "claimed"}`}
               style={{
                 width: 8,
                 height: 8,
@@ -64,7 +64,7 @@ export default function TelemetryHUD() {
               }}
             />
             <span
-              className="font-mono-tech"
+              className={`font-mono-tech ${isRed ? "sos" : "claimed"} pulse-glow`}
               style={{
                 fontSize: "0.78rem",
                 color: isRed ? "var(--glow-crimson)" : "var(--glow-mint)",

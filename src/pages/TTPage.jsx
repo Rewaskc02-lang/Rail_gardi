@@ -81,7 +81,9 @@ export default function TTPage() {
     socket.on("seat_update", handleSeatUpdate);
 
     function requestInitialState() {
-      socket.emit("request_initial_state");
+      socket.emit("request_initial_state", (fullState) => {
+        if (fullState) handleStateUpdate(fullState);
+      });
     }
 
     socket.on("connect", requestInitialState);
@@ -183,7 +185,7 @@ export default function TTPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span
                         id={`status-${seatId}`}
-                        className={`status-badge-spatial ${status}`}
+                        className={`status-badge-spatial ${status} ${status === "claimed" || status === "sos" ? "pulse-glow" : ""}`}
                       >
                         {isSOS && "🚨 "}
                         {status?.toUpperCase() || "EMPTY"}
@@ -200,19 +202,19 @@ export default function TTPage() {
 
                 {/* Passenger & Catering Details */}
                 <div style={{ padding: "14px 20px", background: "rgba(0, 0, 0, 0.4)", borderTop: "1px solid var(--border-subtle)", fontSize: "0.85rem", display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ color: "var(--text-muted)" }}>Occupant:</span>
                     <strong>{isClaimed || isSOS ? passenger.passengerName : "Unoccupied"}</strong>
                   </div>
 
                   {(isClaimed || isSOS) && (
                     <>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
                         <span style={{ color: "var(--text-muted)" }}>PNR:</span>
                         <span className="font-mono-tech" style={{ color: "var(--text-primary)" }}>{pnr}</span>
                       </div>
 
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
                         <span style={{ color: "var(--text-muted)" }}>Context:</span>
                         <span className="font-mono-tech" style={{ color: "var(--glow-mint)" }}>{passenger.age}{passenger.gender} • {passenger.persona}</span>
                       </div>
